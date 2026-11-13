@@ -1,0 +1,23 @@
+# ---- Personal data: never commit ----
+# Backups exported from the side panel ("Exportar") contain your profile and answers.
+applypilot-backup-*.json
+answers.json
+*.answers.json
+*.local.json
+/data/
+/exports/
+/backups/
+.env
+.env.*
+
+# ---- Tooling ----
+node_modules/
+test-results/
+playwright-report/
+*.zip
+*.crx
+*.pem
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

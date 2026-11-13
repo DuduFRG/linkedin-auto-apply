@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ApplyPilot</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="currentColor" />
+          <path d="M9 21.5 16 9l7 12.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 17.5h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" />
+        </svg>
+        <div>
+          <h1>ApplyPilot</h1>
+          <p>Candidaturas simplificadas no piloto automático</p>
+        </div>
+      </div>
+      <button id="btnFocusTab" class="icon-btn" type="button" title="Ir para a aba da automação" aria-label="Ir para a aba da automação">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+      </button>
+    </header>
+
+    <!-- Question / confirmation card. Rendered by sidepanel.js -->
+    <section id="pendingCard" class="card pending" hidden aria-live="polite"></section>
+
+    <section class="card status-card" aria-label="Status da execução">
+      <div class="status-top">
+        <span id="statusPill" class="pill" data-tone="neutral"><span class="dot"></span><span id="statusLabel">Parado</span></span>
+        <span id="statusTimer" class="status-timer"></span>
+      </div>
+      <p id="statusMessage" class="status-message">Configure a busca e clique em Iniciar.</p>
+
+      <div id="currentJob" class="current-job" hidden>
+        <span class="eyebrow">Vaga atual</span>
+        <a id="currentJobTitle" class="current-job-title" target="_blank" rel="noopener noreferrer"></a>
+        <span id="currentJobCompany" class="current-job-company"></span>
+      </div>
+
+      <dl class="stats">
+        <div class="stat"><dt>Enviadas</dt><dd id="statApplied">0</dd></div>
+        <div class="stat"><dt>Puladas</dt><dd id="statSkipped">0</dd></div>
+        <div class="stat"><dt>Falhas</dt><dd id="statFailed">0</dd></div>
+      </dl>
+
+      <div class="progress" role="progressbar" aria-label="Progresso da meta" aria-valuemin="0" id="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <p class="progress-meta" id="progressText">0 de 25 candidaturas</p>
+
+      <div class="controls">
+        <button id="btnPrimary" class="btn btn-primary" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="btnPrimaryIcon"><path d="M8 5v14l11-7z" /></svg>
+          <span id="btnPrimaryLabel">Iniciar</span>
+        </button>
+        <button id="btnStop" class="btn btn-secondary" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+          <span>Parar</span>
+        </button>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist" aria-label="Seções">
+      <button class="tab" role="tab" type="button" data-tab="run" aria-selected="true">Busca</button>
+      <button class="tab" role="tab" type="button" data-tab="answers" aria-selected="false">Respostas <span class="tab-count" id="answersCount">0</span></button>
+      <button class="tab" role="tab" type="button" data-tab="profile" aria-selected="false">Perfil</button>
+      <button class="tab" role="tab" type="button" data-tab="history" aria-selected="false">Histórico</button>
+    </nav>
+
+    <main>
+      <!-- ============ Busca ============ -->
+      <section class="tab-panel" id="tab-run" role="tabpanel">
+        <form class="card form" id="settingsForm" autocomplete="off">
+          <div class="card-head">
+            <h2>Configuração da busca</h2>
+            <span class="hint" id="searchLockHint" hidden>Em execução: a busca vale na próxima vez que iniciar.</span>
+          </div>
+
+          <label class="field">
+            <span class="field-label">Cargo ou palavra-chave <em>*</em></span>
+            <input type="text" data-setting="keyword" data-search placeholder="Ex.: Videomaker, Editor de Vídeo" maxlength="120" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Localização</span>
+            <input type="text" data-setting="location" data-search placeholder="Ex.: São Paulo, Brasil" maxlength="120" />
+          </label>
+
+          <div class="row">
+            <label class="field">
+              <span class="field-label">Publicadas</span>
+              <select data-setting="datePosted" data-search>
+                <option value="any">Qualquer data</option>
+                <option value="month">Último mês</option>
+                <option value="week">Última semana</option>
+                <option value="day">Últimas 24 horas</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Meta por execução</span>
+              <input type="number" data-setting="maxApplications" min="1" max="200" step="1" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="field-label">Currículo salvo no LinkedIn</span>
+            <input type="text" data-setting="resumeName" placeholder="Nome do arquivo (ex.: CV_Videomaker.pdf)" maxlength="160" />
+            <span class="field-help">Deixe vazio: na primeira candidatura eu listo seus currículos salvos e você escolhe.</span>
+          </label>
+
+          <details class="advanced">
+            <summary>Opções avançadas</summary>
+            <div class="row">
+              <label class="field">
+                <span class="field-label">Intervalo mín. (s)</span>
+                <input type="number" data-setting="minDelaySec" min="5" max="600" step="1" />
+              </label>
+              <label class="field">
+                <span class="field-label">Intervalo máx. (s)</span>
+                <input type="number" data-setting="maxDelaySec" min="5" max="900" step="1" />
+              </label>
+            </div>
+            <label class="field">
+              <span class="field-label">Ignorar vagas com estas palavras</span>
+              <input type="text" data-setting="excludeKeywords" placeholder="Ex.: estágio, sênior, freelancer" maxlength="400" />
+              <span class="field-help">Separe por vírgula. Compara com o título e a empresa.</span>
+            </label>
+            <label class="switch"><input type="checkbox" data-setting="remoteOnly" data-search /><span class="switch-ui"></span><span>Somente vagas remotas</span></label>
+            <label class="switch"><input type="checkbox" data-setting="confirmBeforeSubmit" /><span class="switch-ui"></span><span>Pedir confirmação antes de enviar</span></label>
+            <label class="switch"><input type="checkbox" data-setting="askOptionalFields" /><span class="switch-ui"></span><span>Perguntar também campos opcionais</span></label>
+            <label class="switch"><input type="checkbox" data-setting="followCompanies" /><span class="switch-ui"></span><span>Seguir as empresas ao se candidatar</span></label>
+          </details>
+        </form>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Atividade</h2>
+            <button class="link-btn" type="button" id="btnClearLog">Limpar</button>
+          </div>
+          <ol class="log" id="logList"></ol>
+          <p class="empty" id="logEmpty">Nenhuma atividade ainda.</p>
+        </section>
+      </section>
+
+      <!-- ============ Respostas ============ -->
+      <section class="tab-panel" id="tab-answers" role="tabpanel" hidden>
+        <section class="card">
+          <div class="card-head">
+            <h2>Banco de respostas</h2>
+            <div class="head-actions">
+              <button class="link-btn" type="button" id="btnExport">Exportar</button>
+              <button class="link-btn" type="button" id="btnImport">Importar</button>
+              <input type="file" id="importFile" accept="application/json,.json" hidden />
+            </div>
+          </div>
+          <p class="card-sub">Cada pergunta respondida fica salva aqui e é reutilizada automaticamente. Edite ou apague quando quiser.</p>
+          <input type="search" class="search" id="answersSearch" placeholder="Buscar pergunta ou resposta" />
+          <ul class="answers" id="answersList"></ul>
+          <p class="empty" id="answersEmpty">Nenhuma resposta salva ainda. Elas aparecem aqui conforme você responde perguntas novas.</p>
+          <div class="danger-zone">
+            <button class="link-btn danger" type="button" id="btnClearAnswers">Apagar todas as respostas</button>
+          </div>
+        </section>
+      </section>
+
+      <!-- ============ Perfil ============ -->
+      <section class="tab-panel" id="tab-profile" role="tabpanel" hidden>
+        <form class="card form" id="profileForm" autocomplete="off">
+          <div class="card-head"><h2>Seus dados</h2></div>
+          <p class="card-sub">Usados apenas quando o LinkedIn não preencher sozinho. Ficam salvos somente neste navegador.</p>
+          <div class="row">
+            <label class="field"><span class="field-label">Nome</span><input type="text" data-profile="firstName" maxlength="80" /></label>
+            <label class="field"><span class="field-label">Sobrenome</span><input type="text" data-profile="lastName" maxlength="80" /></label>
+          </div>
+          <label class="field"><span class="field-label">E-mail</span><input type="email" data-profile="email" maxlength="160" /></label>
+          <div class="row">
+            <label class="field"><span class="field-label">Código do país</span><input type="text" data-profile="phoneCountry" placeholder="Brasil (+55)" maxlength="40" /></label>
+            <label class="field"><span class="field-label">Celular</span><input type="tel" data-profile="phone" placeholder="11999998888" maxlength="30" /></label>
+          </div>
+          <label class="field"><span class="field-label">Cidade</span><input type="text" data-profile="city" placeholder="São Paulo, São Paulo, Brasil" maxlength="120" /></label>
+          <label class="field"><span class="field-label">Perfil do LinkedIn (URL)</span><input type="url" data-profile="linkedinUrl" maxlength="200" /></label>
+          <label class="field"><span class="field-label">Site ou portfólio</span><input type="url" data-profile="website" maxlength="200" /></label>
+        </form>
+
+        <section class="card privacy">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 9.5 4-1.2 7-5 7-9.5V6z" /><path d="m9 12 2 2 4-4" /></svg>
+          <div>
+            <h3>Privacidade</h3>
+            <p>Perfil, respostas e histórico ficam em <code>chrome.storage.local</code>, dentro do seu perfil do Chrome. Nada é enviado para servidores, e a extensão não faz requisições de rede próprias.</p>
+          </div>
+        </section>
+      </section>
+
+      <!-- ============ Histórico ============ -->
+      <section class="tab-panel" id="tab-history" role="tabpanel" hidden>
+        <section class="card">
+          <div class="card-head">
+            <h2>Histórico</h2>
+            <button class="link-btn danger" type="button" id="btnClearHistory">Limpar</button>
+          </div>
+          <div class="segmented" id="historyFilter" role="group" aria-label="Filtrar histórico">
+            <button type="button" data-filter="all" aria-pressed="true">Todas</button>
+            <button type="button" data-filter="applied" aria-pressed="false">Enviadas</button>
+            <button type="button" data-filter="skipped" aria-pressed="false">Puladas</button>
+            <button type="button" data-filter="failed" aria-pressed="false">Falhas</button>
+          </div>
+          <ul class="history" id="historyList"></ul>
+          <p class="empty" id="historyEmpty">Nenhuma candidatura registrada.</p>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="../shared/constants.js"></script>
+    <script src="../shared/text.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

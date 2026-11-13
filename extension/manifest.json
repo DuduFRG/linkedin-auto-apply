@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "ApplyPilot: Easy Apply assistant",
+  "short_name": "ApplyPilot",
+  "version": "1.0.0",
+  "description": "Automatiza candidaturas simplificadas (Easy Apply) e aprende suas respostas. Todos os dados ficam somente no seu navegador.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "sidePanel", "tabs", "notifications"],
+  "host_permissions": ["https://www.linkedin.com/*"],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "action": {
+    "default_title": "ApplyPilot",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "run_at": "document_idle",
+      "all_frames": false,
+      "js": [
+        "shared/constants.js",
+        "shared/text.js",
+        "shared/storage.js",
+        "shared/profile.js",
+        "shared/search-url.js",
+        "content/selectors.js",
+        "content/dom.js",
+        "content/control.js",
+        "content/fields.js",
+        "content/resume.js",
+        "content/easy-apply.js",
+        "content/search.js",
+        "content/runner.js"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'"
+  }
+}

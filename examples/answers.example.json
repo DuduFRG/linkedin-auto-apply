@@ -1,0 +1,52 @@
+{
+  "app": "ApplyPilot",
+  "version": 1,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "settings": {
+    "keyword": "Videomaker",
+    "location": "São Paulo, Brasil",
+    "resumeName": "CV_Exemplo.pdf",
+    "datePosted": "week",
+    "maxApplications": 25,
+    "minDelaySec": 15,
+    "maxDelaySec": 40
+  },
+  "profile": {
+    "firstName": "Fulano",
+    "lastName": "Exemplo",
+    "email": "fulano@example.com",
+    "phoneCountry": "Brasil (+55)",
+    "phone": "11900000000",
+    "city": "São Paulo, São Paulo, Brasil",
+    "linkedinUrl": "https://www.linkedin.com/in/exemplo",
+    "website": "https://example.com"
+  },
+  "answers": {
+    "text:how many years of experience do you have with adobe premiere": {
+      "label": "How many years of experience do you have with Adobe Premiere?",
+      "type": "number",
+      "family": "text",
+      "value": "5"
+    },
+    "choice:do you have a valid driver s license": {
+      "label": "Do you have a valid driver's license?",
+      "type": "radio",
+      "family": "choice",
+      "value": "Sim",
+      "options": ["Yes", "No"]
+    },
+    "choice:what is your level of proficiency in english": {
+      "label": "What is your level of proficiency in English?",
+      "type": "select",
+      "family": "choice",
+      "value": "Professional",
+      "options": ["None", "Conversational", "Professional", "Native or bilingual"]
+    },
+    "text:pretensao salarial": {
+      "label": "Pretensão salarial (R$)",
+      "type": "number",
+      "family": "text",
+      "value": "6500"
+    }
+  }
+}

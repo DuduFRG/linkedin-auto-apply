@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mock LinkedIn job page (Easy Apply)</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 0; padding: 24px; }
+      .sr { position: absolute; opacity: 0; width: 1px; height: 1px; }
+      .visually-hidden { position: absolute; clip: rect(0 0 0 0); width: 1px; height: 1px; overflow: hidden; }
+      [role='dialog'] { position: fixed; inset: 40px; background: #fff; border: 1px solid #ccc; padding: 16px; overflow: auto; }
+      .confirm { inset: 120px; z-index: 10; }
+      [data-test-form-element] { margin: 10px 0; display: grid; gap: 4px; }
+      .artdeco-inline-feedback--error { color: #c00; }
+      .jobs-document-upload-redesign-card__container { border: 1px solid #ddd; padding: 8px; margin: 6px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="job-details-jobs-unified-top-card__container--two-pane">
+      <div class="job-details-jobs-unified-top-card__job-title"><h1>Videomaker Pleno</h1></div>
+      <div class="job-details-jobs-unified-top-card__company-name"><a href="#">Estúdio Aurora</a></div>
+      <div class="jobs-apply-button--top-card">
+        <button class="jobs-apply-button artdeco-button" aria-label="Easy Apply to Videomaker Pleno at Estúdio Aurora">
+          <span>Easy Apply</span>
+        </button>
+      </div>
+      </div>
+      <aside>
+        <h2>Similar jobs</h2>
+        <ul><li><a href="#">Another job</a> <span>Applied</span></li></ul>
+      </aside>
+      <p>Job description mentioning that candidates who applied before should not apply again.</p>
+    </main>
+
+    <script>
+      (function () {
+        const state = { step: 0, values: {}, submitted: null, discarded: false };
+        window.__mock = state;
+
+        const steps = [
+          {
+            title: 'Contact info',
+            progress: 0,
+            html: `
+              <div data-test-form-element>
+                <label for="first">First name</label>
+                <input id="first" type="text" value="Ana" required>
+              </div>
+              <div data-test-form-element>
+                <label for="email"><span aria-hidden="true">Email address</span><span class="visually-hidden">Email address</span></label>
+                <select id="email" required aria-required="true">
+                  <option value="Select an option">Select an option</option>
+                  <option value="ana@example.com">ana@example.com</option>
+                </select>
+              </div>
+              <div data-test-form-element>
+                <label for="cc">Phone country code</label>
+                <select id="cc" required>
+                  <option value="Select an option">Select an option</option>
+                  <option value="pt">Portugal (+351)</option>
+                  <option value="br">Brazil (+55)</option>
+                </select>
+              </div>
+              <div data-test-form-element>
+                <label for="phone">Mobile phone number</label>
+                <input id="phone" type="text" required aria-required="true">
+              </div>`,
+          },
+          {
+            title: 'Resume',
+            progress: 25,
+            html: `
+              <div class="jobs-document-upload-redesign-card__container jobs-document-upload-redesign-card__container--selected">
+                <h3 class="jobs-document-upload-redesign-card__file-name">CV_Geral.pdf</h3>
+                <input class="sr" type="radio" name="resume" id="r1" checked><label for="r1">Choose</label>
+              </div>
+              <div class="jobs-document-upload-redesign-card__container">
+                <h3 class="jobs-document-upload-redesign-card__file-name">CV_Videomaker.pdf</h3>
+                <input class="sr" type="radio" name="resume" id="r2"><label for="r2">Choose</label>
+              </div>`,
+          },
+          {
+            title: 'Additional questions',
+            progress: 50,
+            html: `
+              <div data-test-form-element>
+                <label for="numeric-years">How many years of experience do you have with Adobe Premiere?</label>
+                <input id="numeric-years" type="text" required aria-required="true">
+              </div>
+              <div data-test-form-element>
+                <fieldset data-test-form-builder-radio-button-form-component="true">
+                  <legend><span aria-hidden="true">Do you have a valid driver's license?</span><span class="visually-hidden">Do you have a valid driver's license?</span><span>*</span></legend>
+                  <div><input class="sr" type="radio" name="lic" id="lic-y" value="Yes"><label for="lic-y">Yes</label></div>
+                  <div><input class="sr" type="radio" name="lic" id="lic-n" value="No"><label for="lic-n">No</label></div>
+                </fieldset>
+              </div>
+              <div data-test-form-element>
+                <label for="english">What is your level of proficiency in English?</label>
+                <select id="english" required>
+                  <option value="Select an option">Select an option</option>
+                  <option>None</option>
+                  <option>Conversational</option>
+                  <option>Professional</option>
+                  <option>Native or bilingual</option>
+                </select>
+              </div>
+              <div data-test-form-element>
+                <label for="site">Portfolio link</label>
+                <input id="site" type="text">
+              </div>`,
+          },
+          {
+            title: 'Review your application',
+            progress: 90,
+            html: `
+              <p>Review your application before submitting.</p>
+              <input type="checkbox" id="follow-company-checkbox" checked>
+              <label for="follow-company-checkbox">Follow Estúdio Aurora to stay up to date</label>`,
+          },
+        ];
+
+        function q(sel, root) { return (root || document).querySelector(sel); }
+
+        function footer(i) {
+          if (i === steps.length - 1) {
+            return '<button class="artdeco-button artdeco-button--primary" data-live-test-easy-apply-submit-button aria-label="Submit application">Submit application</button>';
+          }
+          if (i === steps.length - 2) {
+            return '<button class="artdeco-button artdeco-button--primary" data-live-test-easy-apply-review-button aria-label="Review your application">Review</button>';
+          }
+          return '<button class="artdeco-button artdeco-button--primary" data-easy-apply-next-button aria-label="Continue to next step">Next</button>';
+        }
+
+        function render() {
+          const old = q('.jobs-easy-apply-modal');
+          if (old) old.remove();
+          const s = steps[state.step];
+          const modal = document.createElement('div');
+          modal.className = 'artdeco-modal jobs-easy-apply-modal';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('data-test-modal', '');
+          modal.innerHTML = `
+            <button class="artdeco-modal__dismiss" data-test-modal-close-btn aria-label="Dismiss">x</button>
+            <div class="jobs-easy-apply-content"><form onsubmit="return false">
+              <progress value="${s.progress}" max="100"></progress>
+              <h3>${s.title}</h3>
+              ${s.html}
+            </form></div>
+            <footer>${footer(state.step)}</footer>`;
+          document.body.appendChild(modal);
+          modal.querySelectorAll('input[name="resume"]').forEach((r) =>
+            r.addEventListener('change', () => {
+              modal.querySelectorAll('.jobs-document-upload-redesign-card__container').forEach((c) => {
+                c.classList.toggle('jobs-document-upload-redesign-card__container--selected', c.contains(r) && r.checked);
+              });
+            })
+          );
+          modal.querySelector('footer button').addEventListener('click', onPrimary);
+          modal.querySelector('[data-test-modal-close-btn]').addEventListener('click', onDismiss);
+        }
+
+        function setError(el, message) {
+          const group = el.closest('[data-test-form-element]');
+          const err = document.createElement('div');
+          err.className = 'artdeco-inline-feedback artdeco-inline-feedback--error';
+          err.innerHTML = `<span>${message}</span>`;
+          group.appendChild(err);
+        }
+
+        function validate(modal) {
+          modal.querySelectorAll('.artdeco-inline-feedback--error').forEach((e) => e.remove());
+          let ok = true;
+          modal.querySelectorAll('input[type="text"][required], select[required]').forEach((el) => {
+            const empty = el.tagName === 'SELECT' ? el.value === 'Select an option' : !el.value.trim();
+            if (empty) { setError(el, 'Please enter a valid answer'); ok = false; return; }
+            if (/numeric/.test(el.id) && !/^\d+$/.test(el.value.trim())) {
+              setError(el, 'Enter a whole number between 0 and 99'); ok = false;
+            }
+          });
+          const lic = modal.querySelector('input[name="lic"]');
+          if (lic && !modal.querySelector('input[name="lic"]:checked')) { setError(lic, 'Please make a selection'); ok = false; }
+          return ok;
+        }
+
+        function collect(modal) {
+          modal.querySelectorAll('input, select').forEach((el) => {
+            if (el.type === 'radio') { if (el.checked) state.values[el.name] = el.id; }
+            else if (el.type === 'checkbox') state.values[el.id] = el.checked;
+            else state.values[el.id] = el.value;
+          });
+        }
+
+        function onPrimary() {
+          const modal = q('.jobs-easy-apply-modal');
+          if (!validate(modal)) return;
+          collect(modal);
+          if (state.step === steps.length - 1) {
+            state.submitted = { ...state.values };
+            modal.remove();
+            const done = document.createElement('div');
+            done.setAttribute('role', 'dialog');
+            done.setAttribute('data-test-modal-id', 'post-apply-modal');
+            done.className = 'artdeco-modal';
+            done.innerHTML = '<h2>Your application was sent to Estúdio Aurora!</h2><button class="artdeco-button">Done</button>';
+            document.body.appendChild(done);
+            done.querySelector('button').addEventListener('click', () => done.remove());
+            return;
+          }
+          setTimeout(() => { state.step += 1; render(); }, 250);
+        }
+
+        function onDismiss() {
+          const dialog = document.createElement('div');
+          dialog.setAttribute('role', 'dialog');
+          dialog.className = 'artdeco-modal confirm';
+          dialog.innerHTML =
+            '<p>Save this application?</p>' +
+            '<button data-test-dialog-secondary-btn data-control-name="discard_application_confirm_btn">Discard</button>' +
+            '<button class="artdeco-button--primary">Save</button>';
+          document.body.appendChild(dialog);
+          dialog.querySelector('[data-test-dialog-secondary-btn]').addEventListener('click', () => {
+            state.discarded = true;
+            dialog.remove();
+            const modal = q('.jobs-easy-apply-modal');
+            if (modal) modal.remove();
+          });
+        }
+
+        q('.jobs-apply-button').addEventListener('click', () => setTimeout(render, 300));
+      })();
+    </script>
+  </body>
+</html>
