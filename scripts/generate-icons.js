@@ -7,13 +7,7 @@ const { chromium } = require('playwright');
 
 const SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3B6EF0"/>
-      <stop offset="1" stop-color="#1F4BC4"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
+  <rect width="32" height="32" rx="6" fill="#1e7a5c"/>
   <path d="M9 22 16 9l7 13" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M12 18h8" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
 </svg>`;

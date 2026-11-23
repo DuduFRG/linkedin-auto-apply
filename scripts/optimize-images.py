@@ -14,8 +14,8 @@ OUT = ROOT / "site" / "assets" / "img"
 
 # name -> (crop height in source pixels, output widths)
 JOBS = {
-    "painel": (1520, [400, 800]),
-    "painel-dark": (1520, [400, 800]),
+    "painel": (1960, [400, 800]),
+    "painel-dark": (1960, [400, 800]),
 }
 
 for name, (crop_h, widths) in JOBS.items():

@@ -7,8 +7,7 @@
     <meta name="description" content="Seu download do ApplyPilot começou. Siga os quatro passos para instalar a extensão no Chrome e faça sua primeira candidatura em minutos." />
     <link rel="canonical" href="https://dudufrg.github.io/linkedin-auto-apply/obrigado/" />
     <meta name="robots" content="noindex, follow" />
-    <meta name="theme-color" content="#faf8f4" />
-
+    <meta name="theme-color" content="#f4f6f9" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="ApplyPilot" />
@@ -18,17 +17,16 @@
     <meta property="og:image" content="https://dudufrg.github.io/linkedin-auto-apply/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="ApplyPilot: você responde uma vez, ele cuida das próximas candidaturas." />
+    <meta property="og:image:alt" content="ApplyPilot: gráfico mostrando as perguntas por candidatura caindo de 8 para 0." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Instale o ApplyPilot em 2 minutos" />
     <meta name="twitter:description" content="Passo a passo para instalar a extensão gratuita que automatiza candidaturas simplificadas." />
     <meta name="twitter:image" content="https://dudufrg.github.io/linkedin-auto-apply/og-image.png" />
-
     <link rel="icon" href="../favicon.ico" sizes="32x32" />
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="manifest" href="../site.webmanifest" />
-    <link rel="preload" href="../assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../assets/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="../assets/css/main.css" />
     <script src="../assets/js/main.js" defer></script>
   </head>
@@ -38,32 +36,31 @@
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></symbol>
       <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" /></symbol>
       <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v13M7 8l5-5 5 5" /></symbol>
-      <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#0f1b2d" /><path d="M9 22 16 9l7 13" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 18h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" /></symbol>
+      <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1e7a5c" /><path d="M9 22 16 9l7 13" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 18h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" /></symbol>
     </svg>
 
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
-    <header class="site-header">
+    <header class="site-header is-light">
       <div class="container header-inner">
         <a class="brand" href="../" aria-label="ApplyPilot, página inicial">
           <svg aria-hidden="true"><use href="#i-logo" /></svg>
           ApplyPilot
         </a>
-        <a class="btn btn-ghost btn-sm" href="../">Voltar ao início</a>
+        <a class="btn btn-line btn-sm" href="../">Voltar ao início</a>
       </div>
     </header>
 
     <main id="conteudo" class="page">
       <div class="container page-narrow">
-        <div class="page-head float-in">
+        <div class="page-head">
           <span class="status-badge"><svg class="icon" aria-hidden="true"><use href="#i-check" /></svg></span>
-          <p class="eyebrow">Download iniciado</p>
-          <h1 class="display" style="font-size: clamp(2.3rem, 5vw, 3.6rem)">Obrigado. <em>Faltam só quatro passos.</em></h1>
+          <h1 class="display">Download iniciado. <em>Faltam quatro passos.</em></h1>
           <p class="lead">Em cerca de dois minutos o ApplyPilot estará pronto no seu Chrome. Deixe esta página aberta enquanto instala.</p>
         </div>
 
-        <div class="download-box float-in" style="--delay: 0.1s">
-          <p>O download não começou? <a href="https://github.com/DuduFRG/linkedin-auto-apply/archive/refs/heads/main.zip" data-autodownload>Clique aqui para baixar o arquivo .zip</a>.</p>
+        <div class="download-box">
+          <p>O download não começou? <a href="https://github.com/DuduFRG/linkedin-auto-apply/archive/refs/heads/main.zip" data-autodownload>Baixar o arquivo .zip</a></p>
           <a class="btn btn-primary btn-sm" href="https://github.com/DuduFRG/linkedin-auto-apply/archive/refs/heads/main.zip">
             <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>
             Baixar novamente
@@ -85,14 +82,14 @@
           </li>
           <li>
             <div>
-              <h2>Ative o modo do desenvolvedor</h2>
-              <p>Ligue a chave <strong>Modo do desenvolvedor</strong> no canto superior direito e clique em <strong>Carregar sem compactação</strong>. Selecione a pasta <span class="path">extension</span>, que fica dentro da pasta extraída.</p>
+              <h2>Carregue a pasta da extensão</h2>
+              <p>Ligue a chave <strong>Modo do desenvolvedor</strong>, no canto superior direito, e clique em <strong>Carregar sem compactação</strong>. Selecione a pasta <span class="path">extension</span>, que fica dentro da pasta extraída.</p>
             </div>
           </li>
           <li>
             <div>
-              <h2>Fixe e comece</h2>
-              <p>Clique no ícone de quebra-cabeça da barra do Chrome e fixe o ApplyPilot. Com o LinkedIn aberto e conectado, clique no ícone, preencha a busca e toque em <strong>Iniciar</strong>.</p>
+              <h2>Aceite os termos e comece</h2>
+              <p>Fixe o ApplyPilot pelo ícone de quebra-cabeça da barra do Chrome. Com o LinkedIn aberto, clique no ícone, leia e aceite os <a href="../termos/">termos de uso</a>, preencha a busca e clique em <strong>Iniciar</strong>.</p>
             </div>
           </li>
         </ol>
@@ -106,10 +103,10 @@
               Dar uma estrela
             </a>
           </section>
-          <section class="share-card" style="--delay: 0.08s" aria-labelledby="share-title">
+          <section class="share-card" aria-labelledby="share-title">
             <h2 id="share-title">Conhece alguém em busca de vaga?</h2>
             <p>Compartilhe com quem pode economizar horas de formulários repetidos nesta semana.</p>
-            <a class="btn btn-ghost btn-sm" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fdudufrg.github.io%2Flinkedin-auto-apply%2F" rel="noopener">
+            <a class="btn btn-line btn-sm" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fdudufrg.github.io%2Flinkedin-auto-apply%2F" rel="noopener">
               <svg class="icon" aria-hidden="true"><use href="#i-share" /></svg>
               Compartilhar no LinkedIn
             </a>
@@ -119,9 +116,9 @@
     </main>
 
     <footer class="site-footer">
-      <div class="container footer-bottom" style="margin-top: 0; border-top: 0; padding-top: 0">
-        <span>© <span data-year>2026</span> ApplyPilot. Projeto independente, sem afiliação com o LinkedIn.</span>
-        <a href="../privacidade/">Política de privacidade</a>
+      <div class="container footer-bottom" style="margin-top: 0; border-top: 0">
+        <span>© <span data-year>2026</span> Eduardo de Fraga. Projeto independente, sem afiliação com o LinkedIn.</span>
+        <span><a href="../termos/">Termos de uso</a> · <a href="../privacidade/">Política de privacidade</a></span>
       </div>
     </footer>
   </body>

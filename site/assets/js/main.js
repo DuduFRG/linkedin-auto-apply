@@ -8,8 +8,11 @@
   // Sticky header border once the page scrolls.
   var header = document.querySelector('.site-header');
   if (header) {
+    // The header sits on the petrol cover, then turns into report paper once the cover is passed.
+    var cover = document.querySelector('.cover');
     var onScroll = function () {
-      header.classList.toggle('is-scrolled', window.scrollY > 8);
+      var limit = cover ? cover.offsetTop + cover.offsetHeight - header.offsetHeight : 8;
+      header.classList.toggle('is-scrolled', window.scrollY > limit);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });

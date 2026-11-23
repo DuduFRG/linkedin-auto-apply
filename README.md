@@ -6,7 +6,7 @@
 
 **An open-source Chrome extension that handles LinkedIn Easy Apply for you, and learns your answers so it asks less every time.**
 
-[Website](https://dudufrg.github.io/linkedin-auto-apply/) · [Install](#installation) · [How it works](#how-it-works) · [Privacy](docs/PRIVACY.md) · [Architecture](docs/ARCHITECTURE.md)
+[Website](https://dudufrg.github.io/linkedin-auto-apply/) · [Install](#installation) · [How it works](#how-it-works) · [Privacy](docs/PRIVACY.md) · [Terms](docs/TERMS.md) · [Architecture](docs/ARCHITECTURE.md)
 
 ![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-1f4bc4)
 ![No tracking](https://img.shields.io/badge/data-100%25%20local-17804a)
@@ -61,6 +61,7 @@ Requirements: Google Chrome 116 or newer (Edge and Brave also work).
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and select the `extension/` folder.
 5. Pin the ApplyPilot icon to the toolbar.
+6. Open the panel and accept the [terms of use](docs/TERMS.md) (shown once, on first run).
 
 To update after `git pull`, click **Reload** on the extension card. Your data is kept.
 
@@ -191,6 +192,14 @@ Issues and pull requests are welcome, especially new selectors when LinkedIn cha
 
 If ApplyPilot saved you time, a star helps other people find it.
 
-## License
+## Author
 
-[MIT](LICENSE). LinkedIn is a trademark of LinkedIn Corporation. This project is not affiliated with LinkedIn.
+Created and maintained by **Eduardo de Fraga** · Instagram [@dudu_frg](https://www.instagram.com/dudu_frg/) · GitHub [@DuduFRG](https://github.com/DuduFRG).
+
+## Legal
+
+- [Terms of use](docs/TERMS.md) ([Portuguese, canonical](https://dudufrg.github.io/linkedin-auto-apply/termos/))
+- [Privacy policy](docs/PRIVACY.md) ([Portuguese, canonical](https://dudufrg.github.io/linkedin-auto-apply/privacidade/))
+- [MIT License](LICENSE)
+
+LinkedIn is a trademark of LinkedIn Corporation. This project is independent and not affiliated with, endorsed by or sponsored by LinkedIn.

@@ -49,7 +49,7 @@ function seed(lang) {
   const d = DEMO[lang];
   const now = Date.now();
   return {
-    settings: { language: lang, keyword: d.keyword, location: d.location, maxApplications: 25, minDelaySec: 15, maxDelaySec: 40, datePosted: 'week' },
+    settings: { language: lang, termsAcceptedAt: 1, keyword: d.keyword, location: d.location, maxApplications: 25, minDelaySec: 15, maxDelaySec: 40, datePosted: 'week' },
     control: { state: 'running' },
     run: {
       phase: 'waiting_user',

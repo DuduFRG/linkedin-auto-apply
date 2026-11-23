@@ -18,6 +18,8 @@
   const DEFAULTS = Object.freeze({
     [K.SETTINGS]: {
       language: 'auto', // auto | pt | en | es
+      termsAcceptedAt: null, // timestamp of the first-run acceptance
+      termsVersion: null,
       keyword: '',
       location: '',
       resumeName: '',

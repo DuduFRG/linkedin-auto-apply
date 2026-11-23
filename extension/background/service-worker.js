@@ -55,6 +55,9 @@ async function getRunTab() {
 
 async function start() {
   const settings = await Store.get(K.SETTINGS);
+  if (!settings.termsAcceptedAt) {
+    return { ok: false, error: M('termsRequired') };
+  }
   if (!String(settings.keyword || '').trim()) {
     return { ok: false, error: M('keywordRequired') };
   }

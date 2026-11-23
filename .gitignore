@@ -21,3 +21,6 @@ playwright-report/
 Thumbs.db
 .vscode/
 .idea/
+
+# Design tooling scratch
+.impeccable/

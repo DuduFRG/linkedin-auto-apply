@@ -18,49 +18,56 @@ const FONTS = path.join(SITE, 'assets', 'fonts');
 // Inline everything as data URIs: pages built with setContent cannot read file:// URLs.
 const dataUrl = (p, type) => `data:${type};base64,${fs.readFileSync(p).toString('base64')}`;
 
-const LOGO = (size, radius = 8) => `
+const LOGO = (size, radius = 6) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="${radius}" fill="#0f1b2d"/>
+  <rect width="32" height="32" rx="${radius}" fill="#1e7a5c"/>
   <path d="M9 22 16 9l7 13" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M12 18h8" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
 </svg>`;
 
 const FONT_CSS = `
-@font-face { font-family: 'Newsreader'; src: url('${dataUrl(path.join(FONTS, 'newsreader-display.woff2'), 'font/woff2')}'); font-weight: 380 540; }
-@font-face { font-family: 'Newsreader'; src: url('${dataUrl(path.join(FONTS, 'newsreader-display-italic.woff2'), 'font/woff2')}'); font-weight: 380 540; font-style: italic; }
-@font-face { font-family: 'Hanken Grotesk'; src: url('${dataUrl(path.join(FONTS, 'hanken-grotesk.woff2'), 'font/woff2')}'); font-weight: 100 900; }
+@font-face { font-family: 'Schibsted Grotesk'; src: url('${dataUrl(path.join(FONTS, 'schibsted-grotesk.woff2'), 'font/woff2')}'); font-weight: 500 700; }
+@font-face { font-family: 'Public Sans'; src: url('${dataUrl(path.join(FONTS, 'public-sans.woff2'), 'font/woff2')}'); font-weight: 400 600; }
 `;
 
-function card({ width, height, eyebrow, title, accent, foot, shot }) {
+/** "Relatório Anual" cover: petrol field, visible column grid, headline + Gráfico 1. */
+function card({ width, height, title, foot, figLabel, figTitle, values, xLabels, note }) {
+  const max = Math.max(...values);
+  const cols = Array.from({ length: 12 }, () => '<span></span>').join('');
+  const bars = values
+    .map((v, i) => {
+      const current = i === values.length - 1;
+      const h = Math.max(3, (v / max) * 100);
+      return `<div class="col${current ? ' cur' : ''}"><b>${v}</b><i style="height:${h}%"></i><small>${xLabels[i]}</small></div>`;
+    })
+    .join('');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   ${FONT_CSS}
   * { box-sizing: border-box; margin: 0; }
-  body { width: ${width}px; height: ${height}px; overflow: hidden; background: #faf8f4; font-family: 'Hanken Grotesk', sans-serif; color: #0f1b2d; position: relative; }
-  .grid { position: absolute; inset: 0; background-image: linear-gradient(#e5dfd3 1px, transparent 1px), linear-gradient(90deg, #e5dfd3 1px, transparent 1px); background-size: 64px 64px; opacity: .5;
-          -webkit-mask-image: radial-gradient(ellipse 60% 80% at 78% 40%, #000 15%, transparent 75%); }
-  .copy { position: absolute; left: 80px; top: 0; bottom: 0; width: ${Math.round(width * 0.53)}px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
-  .brand { display: flex; align-items: center; gap: 14px; font-weight: 700; font-size: 28px; letter-spacing: -.01em; }
-  .eyebrow { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #9a7442; }
-  .eyebrow::before { content: ''; width: 34px; height: 1px; background: currentColor; }
-  h1 { font-family: 'Newsreader', serif; font-weight: 420; font-size: 62px; line-height: 1.03; letter-spacing: -.02em; }
-  h1 em { font-style: italic; font-weight: 400; color: #1f4bc4; }
-  .foot { display: flex; gap: 22px; font-size: 20px; color: #46546a; font-weight: 500; }
-  .foot span { display: inline-flex; align-items: center; gap: 8px; }
-  .foot span::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #1a7f4b; }
-  .device { position: absolute; right: 72px; top: 64px; width: 392px; padding: 10px; border-radius: 26px; background: linear-gradient(#fff, #f4f1ea);
-            border: 1px solid #e5dfd3; box-shadow: 0 40px 80px -24px rgba(15,27,45,.35); }
-  .device img { display: block; width: 100%; border-radius: 16px; border: 1px solid #e5dfd3; }
-  .rule { position: absolute; left: 80px; bottom: 56px; width: 120px; height: 1px; background: #d6cebf; }
+  body { width: ${width}px; height: ${height}px; overflow: hidden; background: #0f2a4a; color: #fff; font-family: 'Public Sans', sans-serif; position: relative; }
+  .grid { position: absolute; inset: 0 64px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+  .grid span { border-left: 1px solid rgba(255,255,255,.09); }
+  .grid span:last-child { border-right: 1px solid rgba(255,255,255,.09); }
+  .brand { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 12px; font-family: 'Schibsted Grotesk'; font-weight: 650; font-size: 26px; letter-spacing: -.02em; }
+  h1 { position: absolute; left: 64px; top: 150px; width: ${Math.round(width * 0.5)}px; font-family: 'Schibsted Grotesk'; font-weight: 650; font-size: 70px; line-height: .98; letter-spacing: -.04em; }
+  .foot { position: absolute; left: 64px; bottom: 56px; display: flex; gap: 28px; font-size: 20px; color: #c4cfdc; }
+  .foot span + span::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #c4cfdc; margin: 0 14px 4px -16px; }
+  .fig { position: absolute; right: 64px; top: 150px; width: ${Math.round(width * 0.36)}px; }
+  .lab { display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.5); font-family: 'Schibsted Grotesk'; font-size: 18px; }
+  .lab b { font-weight: 700; } .lab span { font-weight: 500; }
+  .chart { display: grid; grid-template-columns: repeat(${values.length}, 1fr); gap: 12px; height: 250px; margin-top: 30px; padding-bottom: 28px; border-bottom: 1px solid rgba(255,255,255,.45); position: relative; }
+  .col { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; }
+  .col i { display: block; background: rgba(255,255,255,.3); }
+  .col b { text-align: center; font-family: 'Schibsted Grotesk'; font-size: 18px; margin-bottom: 6px; }
+  .col small { position: absolute; bottom: -28px; left: 0; right: 0; text-align: center; font-family: 'Schibsted Grotesk'; font-size: 14px; color: #c4cfdc; }
+  .col.cur i { background: #52c79c; } .col.cur b, .col.cur small { color: #52c79c; }
+  .note { margin-top: 40px; font-size: 15px; color: #c4cfdc; }
   </style></head><body>
-  <div class="grid"></div>
-  <div class="copy">
-    <div class="brand">${LOGO(44, 9)} ApplyPilot</div>
-    <div class="eyebrow">${eyebrow}</div>
-    <h1>${title} <em>${accent}</em></h1>
-    <div class="foot">${foot.map((f) => `<span>${f}</span>`).join('')}</div>
-  </div>
-  <div class="rule"></div>
-  <div class="device"><img src="${dataUrl(shot, 'image/png')}"></div>
+  <div class="grid">${cols}</div>
+  <div class="brand">${LOGO(40)} ApplyPilot</div>
+  <h1>${title}</h1>
+  <div class="foot">${foot.map((f) => `<span>${f}</span>`).join('')}</div>
+  <div class="fig"><div class="lab"><b>${figLabel}</b><span>${figTitle}</span></div><div class="chart">${bars}</div><p class="note">${note}</p></div>
   </body></html>`;
 }
 
@@ -76,9 +83,9 @@ async function render(browser, html, out, width, height) {
 async function icon(browser, size, out, { maskable = false } = {}) {
   const page = await browser.newPage({ viewport: { width: size, height: size } });
   const inner = maskable ? Math.round(size * 0.72) : size;
-  const bg = maskable ? '#0f1b2d' : 'transparent';
+  const bg = maskable ? '#1e7a5c' : 'transparent';
   await page.setContent(
-    `<html><body style="margin:0;width:${size}px;height:${size}px;display:grid;place-items:center;background:${bg}">${LOGO(inner, maskable ? 0 : 7)}</body></html>`
+    `<html><body style="margin:0;width:${size}px;height:${size}px;display:grid;place-items:center;background:${bg}">${LOGO(inner, maskable ? 0 : 6)}</body></html>`
   );
   await page.screenshot({ path: out, omitBackground: !maskable });
   await page.close();
@@ -87,19 +94,19 @@ async function icon(browser, size, out, { maskable = false } = {}) {
 
 (async () => {
   const browser = await chromium.launch();
-  const ptShot = path.join(ROOT, 'docs', 'images', 'site', 'painel.png');
-  const enShot = path.join(ROOT, 'docs', 'images', 'panel.png');
-
+    
   await render(
     browser,
     card({
       width: 1200,
       height: 630,
-      eyebrow: 'Extensão gratuita para Chrome',
-      title: 'Você responde uma vez.',
-      accent: 'Ele cuida das próximas candidaturas.',
-      foot: ['Open source', '100% local', 'PT · EN · ES'],
-      shot: ptShot,
+      title: 'Cada candidatura pergunta menos que a anterior.',
+      foot: ['Gratuita e open source', '100% local', 'PT · EN · ES'],
+      figLabel: 'Gráfico 1',
+      figTitle: 'Perguntas feitas a você, por candidatura',
+      values: [8, 5, 3, 2, 1, 1, 0, 0],
+      xLabels: ['1ª', '2ª', '3ª', '4ª', '5ª', '6ª', '7ª', '8ª'],
+      note: 'Exemplo ilustrativo.',
     }),
     path.join(SITE, 'og-image.png'),
     1200,
@@ -111,11 +118,13 @@ async function icon(browser, size, out, { maskable = false } = {}) {
     card({
       width: 1280,
       height: 640,
-      eyebrow: 'Open-source Chrome extension',
-      title: 'Answer once.',
-      accent: 'It handles every Easy Apply after that.',
-      foot: ['MIT licensed', '100% local', 'EN · PT · ES'],
-      shot: enShot,
+      title: 'Every application asks less than the last.',
+      foot: ['Free and open source', '100% local', 'EN · PT · ES'],
+      figLabel: 'Figure 1',
+      figTitle: 'Questions asked to you, per application',
+      values: [8, 5, 3, 2, 1, 1, 0, 0],
+      xLabels: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'],
+      note: 'Illustrative example.',
     }),
     path.join(ROOT, 'docs', 'images', 'social-preview.png'),
     1280,

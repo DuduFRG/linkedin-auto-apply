@@ -176,7 +176,7 @@
 
     const max = Math.max(1, Number(settings.maxApplications) || 1);
     const applied = stats.applied || 0;
-    $('#progressBar').style.width = `${Math.min(100, (applied / max) * 100)}%`;
+    $('#progressBar').style.transform = `scaleX(${Math.min(1, applied / max)})`;
     $('#progress').setAttribute('aria-valuemax', String(max));
     $('#progress').setAttribute('aria-valuenow', String(applied));
     $('#progressText').textContent = t('goalProgress', { applied, max });
@@ -629,12 +629,51 @@
     }
   }
 
+  // ---------------- Terms of use (first run) ----------------
+
+  const TERMS_VERSION = '2026-11-23';
+
+  function termsAccepted() {
+    return !!(state.settings && state.settings.termsAcceptedAt);
+  }
+
+  function renderTerms() {
+    $('#termsCard').hidden = termsAccepted();
+    let version = '';
+    try {
+      version = chrome.runtime.getManifest().version;
+    } catch (_) {
+      version = '';
+    }
+    $('#footerCredit').textContent = t('credit', { version });
+  }
+
+  function bindTerms() {
+    const check = $('#termsCheck');
+    const accept = $('#btnAcceptTerms');
+    check.addEventListener('change', () => {
+      accept.disabled = !check.checked;
+    });
+    accept.addEventListener('click', async () => {
+      if (!check.checked) return;
+      accept.disabled = true;
+      await Store.patch(K.SETTINGS, { termsAcceptedAt: Date.now(), termsVersion: TERMS_VERSION });
+      toast(t('termsAccepted'));
+    });
+  }
+
   // ---------------- Wiring ----------------
 
   function bindActions() {
     $('#btnPrimary').addEventListener('click', async (ev) => {
       const btn = ev.currentTarget;
       const action = btn.dataset.action || MSG.START;
+      if (action === MSG.START && !termsAccepted()) {
+        toast(t('termsRequired'), 'error');
+        $('#termsCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        $('#termsCheck').focus();
+        return;
+      }
       if (action === MSG.START && !$('[data-setting="keyword"]').value.trim()) {
         toast(t('keywordRequired'), 'error');
         selectTab('run');
@@ -698,6 +737,7 @@
     [K.SETTINGS]: () => {
       fillForm('[data-setting]', 'setting', state.settings);
       setLanguage();
+      renderTerms();
       renderStatus();
     },
     [K.PROFILE]: () => fillForm('[data-profile]', 'profile', state.profile),
@@ -713,6 +753,7 @@
   };
 
   function renderAll() {
+    renderTerms();
     renderStatus();
     renderPending();
     renderAnswers();
@@ -740,6 +781,7 @@
 
     bindSettings();
     bindActions();
+    bindTerms();
     Object.values(RENDERERS).forEach((fn) => fn());
 
     let tab = 'run';

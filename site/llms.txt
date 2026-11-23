@@ -5,6 +5,7 @@
 Key facts:
 
 - Type: Manifest V3 browser extension for Google Chrome 116+, Microsoft Edge and Brave (Windows, macOS, Linux). Not available on mobile browsers.
+- Creator and maintainer: Eduardo de Fraga (Instagram @dudu_frg, GitHub @DuduFRG).
 - Price: free. License: MIT. Source: https://github.com/DuduFRG/linkedin-auto-apply
 - Languages: interface in Portuguese, English and Spanish.
 - Privacy: all data in chrome.storage.local; extension pages use the CSP connect-src 'none', so they cannot send data over the network.
@@ -17,6 +18,7 @@ Key facts:
 
 - [Home (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/): what it does, how it works, privacy, FAQ.
 - [Privacy policy (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/privacidade/)
+- [Terms of use (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/termos/)
 
 ## Documentation
 
