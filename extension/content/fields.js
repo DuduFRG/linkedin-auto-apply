@@ -38,14 +38,14 @@
   function findLabelNode(el, container) {
     if (el.id) {
       const escaped = root.CSS && root.CSS.escape ? root.CSS.escape(el.id) : el.id;
-      const byFor = container.querySelector(`label[for="${escaped}"]`) || document.querySelector(`label[for="${escaped}"]`);
+      const byFor = container.querySelector(`label[for="${escaped}"]`) || el.getRootNode().querySelector(`label[for="${escaped}"]`);
       if (byFor) return byFor;
     }
     const labelledBy = el.getAttribute('aria-labelledby');
     if (labelledBy) {
       const node = labelledBy
         .split(/\s+/)
-        .map((id) => document.getElementById(id))
+        .map((id) => (el.getRootNode().getElementById ? el.getRootNode().getElementById(id) : document.getElementById(id)))
         .find(Boolean);
       if (node) return node;
     }
@@ -315,7 +315,8 @@
     const controls = field.el.getAttribute('aria-controls');
     const option = await D.waitFor(
       () => {
-        const scope = controls ? document.getElementById(controls) : null;
+        const rootNode = field.el.getRootNode();
+        const scope = controls ? (rootNode.getElementById ? rootNode.getElementById(controls) : document.getElementById(controls)) : null;
         const options = D.all(LAA.SEL.typeaheadOption, scope || document);
         return options.length ? options : null;
       },

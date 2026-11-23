@@ -64,10 +64,10 @@ const CHROME_STUB = () => {
   };
 };
 
-async function openPage(browser, fixture, seed) {
+async function openPage(browser, fixture, seed, hash = '') {
   const page = await browser.newPage();
   await page.addInitScript(CHROME_STUB);
-  await page.goto(`file://${path.join(__dirname, 'fixtures', fixture)}`);
+  await page.goto(`file://${path.join(__dirname, 'fixtures', fixture)}${hash}`);
   for (const file of SCRIPTS) await page.addScriptTag({ path: path.join(ROOT, file) });
   await page.evaluate(async (s) => {
     for (const [k, v] of Object.entries(s)) await window.chrome.storage.local.set({ [k]: v });
@@ -184,6 +184,30 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     assert.equal(result2.status, 'applied', result2.reason);
     assert.equal((await page2.evaluate(() => window.__asked)).length, 0, 'no questions on second run');
     await page2.close();
+  });
+
+  await t.test('dialog rendered inside a shadow root is filled and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#shadow'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted.phone, '11999998888');
+    assert.equal(mock.submitted.resume, 'r2');
+    assert.equal((await page.evaluate(() => window.__asked)).length, 0);
+    await page.close();
   });
 
   await t.test('skip from the panel discards the application', async () => {

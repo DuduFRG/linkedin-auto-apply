@@ -143,8 +143,8 @@
     const job = { jobId, title: '', company: '', url: Urls.buildJobUrl(jobId) };
     await Store.patchRun({ phase: PHASE.APPLYING, current: job, message: M('openingJob') });
 
-    await D.waitFor(() => D.first(SEL.jobTitle), { timeout: 15000 });
-    await D.pause(1000, 2000);
+    await D.waitFor(() => D.first(SEL.jobTitle) || EasyApply.findEasyApplyButton(), { timeout: 8000 });
+    await D.pause(500, 1000);
     Object.assign(job, EasyApply.jobInfo());
     await Store.patchRun({ current: job, message: M('applyingTo', { title: job.title || jobId }) });
 

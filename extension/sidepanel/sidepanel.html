@@ -191,6 +191,28 @@
             </div>
           </div>
           <p class="card-sub" data-i18n="answersSub"></p>
+          <details class="add-answer" id="addAnswer">
+            <summary data-i18n="manualTitle"></summary>
+            <form class="form" id="addAnswerForm" autocomplete="off">
+              <label class="field">
+                <span class="field-label" data-i18n="manualQuestion"></span>
+                <input type="text" id="manualQuestion" data-i18n-ph="manualQuestionPh" maxlength="300" />
+              </label>
+              <label class="field">
+                <span class="field-label" data-i18n="manualAnswer"></span>
+                <input type="text" id="manualAnswer" data-i18n-ph="manualAnswerPh" maxlength="1000" />
+              </label>
+              <button class="btn btn-primary" type="submit" data-i18n="manualAdd"></button>
+            </form>
+            <div class="form bulk">
+              <label class="field">
+                <span class="field-label" data-i18n="bulkLabel"></span>
+                <textarea id="bulkAnswers" rows="5" data-i18n-ph="bulkPh"></textarea>
+                <span class="field-help" data-i18n="bulkHint"></span>
+              </label>
+              <button class="btn btn-secondary" type="button" id="btnBulkAdd" data-i18n="bulkAdd"></button>
+            </div>
+          </details>
           <input type="search" class="search" id="answersSearch" data-i18n-ph="answersSearch" data-i18n-aria="answersSearch" />
           <ul class="answers" id="answersList"></ul>
           <p class="empty" id="answersEmpty"></p>

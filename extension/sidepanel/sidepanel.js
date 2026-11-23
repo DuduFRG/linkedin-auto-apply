@@ -590,6 +590,45 @@
     }
   }
 
+  function bindManualAnswers() {
+    const form = $('#addAnswerForm');
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const label = $('#manualQuestion').value.trim();
+      const value = $('#manualAnswer').value.trim();
+      if (!label || !value) {
+        toast(t('manualMissing'), 'error');
+        (label ? $('#manualAnswer') : $('#manualQuestion')).focus();
+        return;
+      }
+      const { key, entry } = T.manualAnswerEntry(label, value);
+      await Store.saveAnswer(key, entry);
+      form.reset();
+      $('#manualQuestion').focus();
+      toast(t('answerAdded'));
+    });
+
+    $('#btnBulkAdd').addEventListener('click', async () => {
+      const box = $('#bulkAnswers');
+      const rows = T.parseAnswerLines(box.value);
+      if (!rows.length) {
+        toast(t('bulkNone'), 'error');
+        box.focus();
+        return;
+      }
+      await Store.update(K.ANSWERS, (all) => {
+        rows.forEach(({ label, value }) => {
+          const { key, entry } = T.manualAnswerEntry(label, value);
+          const prev = all[key] || {};
+          all[key] = { ...prev, ...entry, createdAt: prev.createdAt || Date.now(), updatedAt: Date.now(), uses: prev.uses || 0 };
+        });
+        return all;
+      });
+      box.value = '';
+      toast(t('bulkAdded', { count: rows.length }));
+    });
+  }
+
   // ---------------- History ----------------
 
   const STATUS_KEY = { applied: 'statusApplied', skipped: 'statusSkipped', failed: 'statusFailed' };
@@ -782,6 +821,7 @@
     bindSettings();
     bindActions();
     bindTerms();
+    bindManualAnswers();
     Object.values(RENDERERS).forEach((fn) => fn());
 
     let tab = 'run';

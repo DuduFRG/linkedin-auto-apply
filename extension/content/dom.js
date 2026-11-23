@@ -32,14 +32,65 @@
     return Array.isArray(selectors) ? selectors : [selectors];
   }
 
+  // ---------- Shadow DOM ----------
+  // LinkedIn renders parts of the job page (notably the Easy Apply dialog)
+  // inside shadow roots, which document.querySelectorAll cannot see. Every
+  // query below walks the document plus every shadow root inside the scope.
+  // Extensions may also read closed roots through chrome.dom.
+
+  function shadowRootOf(el) {
+    try {
+      if (el.shadowRoot) return el.shadowRoot;
+      const api = root.chrome && root.chrome.dom;
+      if (api && typeof api.openOrClosedShadowRoot === 'function') return api.openOrClosedShadowRoot(el) || null;
+    } catch (_) {
+      /* not a host */
+    }
+    return null;
+  }
+
+  // Only custom elements and a few known hosts can carry a shadow root worth
+  // checking through chrome.dom; plain elements are checked via .shadowRoot only.
+  function couldHost(el) {
+    return el.shadowRoot || el.tagName.includes('-') || el.id === 'interop-outlet' || el.hasAttribute('data-testid');
+  }
+
+  let rootsCache = { at: 0, scope: null, list: [] };
+
+  function roots(scope = document) {
+    const now = Date.now();
+    if (rootsCache.scope === scope && now - rootsCache.at < 400) return rootsCache.list;
+    const list = [scope];
+    const walk = (r) => {
+      let els = [];
+      try {
+        els = r.querySelectorAll('*');
+      } catch (_) {
+        els = [];
+      }
+      for (const el of els) {
+        if (!couldHost(el)) continue;
+        const sr = shadowRootOf(el);
+        if (sr && !list.includes(sr)) {
+          list.push(sr);
+          walk(sr);
+        }
+      }
+    };
+    walk(scope);
+    rootsCache = { at: now, scope, list };
+    return list;
+  }
+
   /** All matches for a list of selectors, de-duplicated, in selector priority order. */
   function all(selectors, scope = document, { visible = true } = {}) {
     const seen = new Set();
     const out = [];
+    const searchRoots = roots(scope);
     toList(selectors).forEach((sel) => {
       let nodes = [];
       try {
-        nodes = scope.querySelectorAll(sel);
+        nodes = searchRoots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
       } catch (_) {
         nodes = [];
       }
@@ -155,6 +206,7 @@
   }
 
   LAA.D = Object.freeze({
+    roots,
     sleep,
     jitter,
     pause,

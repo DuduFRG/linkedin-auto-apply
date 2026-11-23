@@ -119,7 +119,18 @@
           },
         ];
 
-        function q(sel, root) { return (root || document).querySelector(sel); }
+        // "#shadow" renders the dialog inside a shadow root, like LinkedIn's newer layout.
+        let mount = document.body;
+        if (location.hash === '#shadow') {
+          const host = document.createElement('div');
+          host.id = 'interop-outlet';
+          document.body.appendChild(host);
+          mount = host.attachShadow({ mode: 'open' });
+          const style = document.createElement('style');
+          style.textContent = document.querySelector('style').textContent;
+          mount.appendChild(style);
+        }
+        function q(sel, root) { return (root || mount).querySelector(sel); }
 
         function footer(i) {
           if (i === steps.length - 1) {
@@ -147,7 +158,7 @@
               ${s.html}
             </form></div>
             <footer>${footer(state.step)}</footer>`;
-          document.body.appendChild(modal);
+          mount.appendChild(modal);
           modal.querySelectorAll('input[name="resume"]').forEach((r) =>
             r.addEventListener('change', () => {
               modal.querySelectorAll('.jobs-document-upload-redesign-card__container').forEach((c) => {
@@ -226,7 +237,7 @@
           });
         }
 
-        q('.jobs-apply-button').addEventListener('click', () => setTimeout(render, 300));
+        document.querySelector('.jobs-apply-button').addEventListener('click', () => setTimeout(render, 300));
       })();
     </script>
   </body>

@@ -17,24 +17,44 @@
 
   // ---------------- Page inspection ----------------
 
+  /** A button that moves the application forward (next, review or submit), in any supported language. */
+  function isFlowButton(b) {
+    const label = `${D.text(b)} ${b.getAttribute('aria-label') || ''}`;
+    return T.includesAny(label, UI_TEXT.next) || T.includesAny(label, UI_TEXT.review) || T.includesAny(label, UI_TEXT.submit);
+  }
+
   function getModal() {
     const candidates = D.all(SEL.modal);
     return (
       candidates.find((m) => m.matches('.jobs-easy-apply-modal')) ||
       candidates.find((m) => D.first(SEL.modalForm, m) && D.first(['footer button', 'button.artdeco-button--primary'], m)) ||
+      // Newer layouts: any dialog with form controls and a next / review / submit button.
+      candidates.find((m) => m.querySelector('input, select, textarea, fieldset') && D.all('button', m).some(isFlowButton)) ||
       null
     );
   }
 
   function jobInfo() {
-    const title = D.text(D.first(SEL.jobTitle));
-    const company = D.text(D.first(SEL.company));
+    let title = D.text(D.first(SEL.jobTitle));
+    let company = D.text(D.first(SEL.company));
+    // Fallback: the tab title reads "Job title | Company | LinkedIn".
+    const parts = String(document.title || '')
+      .replace(/^\(\d+\)\s*/, '')
+      .split(' | ')
+      .map((p) => p.trim())
+      .filter((p) => p && !/^linkedin$/i.test(p));
+    if (!title || title.length > 140) title = parts[0] || '';
+    if (!company) company = parts[1] || '';
     return { title, company };
   }
 
   function findEasyApplyButton() {
-    const buttons = D.all(SEL.easyApplyButton);
-    return buttons.find((b) => T.includesAny(`${D.text(b)} ${b.getAttribute('aria-label') || ''}`, UI_TEXT.easyApply)) || null;
+    const matches = (b) => T.includesAny(`${D.text(b)} ${b.getAttribute('aria-label') || ''}`, UI_TEXT.easyApply);
+    const known = D.all(SEL.easyApplyButton).find(matches);
+    if (known) return known;
+    // Newer layouts render the action as a plain button or link; never pick one inside the results list.
+    const scope = document.querySelector('main') || document.body;
+    return D.all('button, a[role="button"], a[href*="/apply"]', scope).find((b) => matches(b) && D.text(b).length < 60 && !b.closest('li')) || null;
   }
 
   /**
@@ -92,6 +112,16 @@
     if (review) return { button: review, kind: 'review' };
     const next = D.first(SEL.nextButton, modal);
     if (next) return { button: next, kind: 'next' };
+
+    // Text fallback for layouts without the data attributes: the last flow button wins (it is the primary one).
+    const flow = D.all('button', modal).filter(isFlowButton);
+    if (flow.length) {
+      const button = flow[flow.length - 1];
+      const label = `${D.text(button)} ${button.getAttribute('aria-label') || ''}`;
+      if (T.includesAny(label, UI_TEXT.submit)) return { button, kind: 'submit' };
+      if (T.includesAny(label, UI_TEXT.review)) return { button, kind: 'review' };
+      return { button, kind: 'next' };
+    }
 
     const primary = D.first(SEL.footerPrimary, modal);
     if (!primary) return null;
@@ -151,8 +181,8 @@
       const value = Profile.profileValue(ctx.profile, profileField);
       if (value) return { value, source: 'profile', profileField };
     }
-    const saved = ctx.answers[field.key];
-    if (saved && saved.value != null && saved.value !== '') return { value: saved.value, source: 'answers', profileField };
+    const saved = T.findSavedAnswer(ctx.answers, field.key, field.label);
+    if (saved) return { value: saved.entry.value, source: 'answers', savedKey: saved.key, profileField };
     return { value: null, source: null, profileField };
   }
 
@@ -192,7 +222,7 @@
       if (!mustAsk && known.value != null) {
         const result = await Fields.fillField(field, known.value);
         if (result.ok) {
-          if (known.source === 'answers') used.push(field.key);
+          if (known.source === 'answers') used.push(known.savedKey || field.key);
           continue;
         }
         field.error = result.reason || M('savedAnswerInvalid');
@@ -237,11 +267,11 @@
 
   async function openModal() {
     const ready = await D.waitFor(() => findEasyApplyButton() || alreadyApplied() || closedForApplications() || D.first(SEL.jobTitle), {
-      timeout: 15000,
+      timeout: 10000,
     });
     if (!ready) throw new SkipJob(M('jobNotLoaded'), STATUS.FAILED);
     // Give the top card a moment to render its apply button.
-    await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 6000 });
+    await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 5000 });
 
     if (alreadyApplied()) throw new SkipJob(M('alreadyApplied'));
     if (closedForApplications()) throw new SkipJob(M('jobClosed'));
@@ -250,7 +280,7 @@
     if (!button) throw new SkipJob(M('noEasyApply'));
     if (D.isDisabled(button)) throw new SkipJob(M('buttonDisabled'));
 
-    await D.pause(700, 1500);
+    await D.pause(400, 900);
     D.click(button);
 
     const modal = await D.waitFor(getModal, { timeout: 12000 });
@@ -258,7 +288,7 @@
       if (hitDailyLimit()) throw new LimitReached();
       throw new SkipJob(M('formNotOpened'), STATUS.FAILED);
     }
-    await D.pause(600, 1200);
+    await D.pause(400, 800);
     return modal;
   }
 
