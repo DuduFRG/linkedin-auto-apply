@@ -90,4 +90,6 @@ test('search URL enforces Easy Apply and paginates', () => {
   assert.equal(url.searchParams.get('start'), '50');
   assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/view/4012345678/?refId=x'), '4012345678');
   assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/search/?currentJobId=123&f_AL=true'), '123');
+  assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/search-results/?currentJobId=4300000001'), '4300000001');
+  assert.equal(Urls.jobIdFromUrl('urn:li:fsd_jobPosting:4300000002'), '4300000002');
 });

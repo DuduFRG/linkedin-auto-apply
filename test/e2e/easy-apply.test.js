@@ -218,6 +218,15 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     await page.close();
   });
 
+  await t.test('search page: "no exact results" banner with similar jobs still collects them', async () => {
+    const page = await openPage(browser, 'search-similar.html', BASE_SEED);
+    const res = await page.evaluate(() => window.LAA.Search.collect());
+    assert.equal(res.empty, false);
+    assert.deepEqual(res.ids.sort(), ['4300000001', '4300000002', '4300000004']);
+    assert.equal(res.appliedOnPage, 1);
+    await page.close();
+  });
+
   await t.test('search page: collects unique ids and ignores applied cards', async () => {
     const page = await openPage(browser, 'search.html', BASE_SEED);
     const res = await page.evaluate(() => window.LAA.Search.collect());

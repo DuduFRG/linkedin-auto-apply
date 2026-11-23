@@ -105,7 +105,7 @@
   async function processSearch(run) {
     const page = run.page || 0;
     await Store.patchRun({ phase: PHASE.SEARCHING, message: M('readingResults', { page: page + 1 }) });
-    const { ids, empty } = await Search.collect();
+    const { ids, empty, diagnostic } = await Search.collect();
     await Control.checkpoint();
 
     const history = await Store.get(K.HISTORY);
@@ -114,6 +114,12 @@
     const queue = ids.filter((id) => !done.has(id) && !processed.has(id));
 
     if (empty) {
+      if (diagnostic) await Store.log('warn', M('searchDiagnostic', diagnostic));
+      // The results list sometimes renders late: reload the first page once before giving up.
+      if (page === 0 && !run.firstPageRetried) {
+        await Store.patchRun({ firstPageRetried: true });
+        return navigate(Urls.buildSearchUrl(run.search, 0), M('openingSearch'));
+      }
       const emptyPages = (run.emptyPages || 0) + 1;
       if (page === 0) return finish(M('noJobsFound'));
       if (emptyPages >= LIMITS.MAX_EMPTY_PAGES) return finish(M('endOfResults'));
@@ -173,7 +179,7 @@
       if (!run.search || !run.search.keyword) return finish(M('missingSearch'), PHASE.ERROR);
 
       if (/^\/jobs\/view\/\d+/.test(location.pathname)) return await processJob();
-      if (/^\/jobs\/search/.test(location.pathname)) return await processSearch(run);
+      if (/^\/jobs\/(search|collections)/.test(location.pathname)) return await processSearch(run);
       return await navigate(Urls.buildSearchUrl(run.search, run.page || 0), M('openingSearch'));
     } catch (err) {
       if (err instanceof Control.StopSignal) {

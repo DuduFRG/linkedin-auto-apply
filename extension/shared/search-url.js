@@ -39,7 +39,9 @@
     const view = s.match(/\/jobs\/view\/(\d+)/);
     if (view) return view[1];
     const current = s.match(/[?&]currentJobId=(\d+)/);
-    return current ? current[1] : null;
+    if (current) return current[1];
+    const urn = s.match(/jobPosting(?::|%3A)(\d{6,})/i);
+    return urn ? urn[1] : null;
   }
 
   LAA.Urls = Object.freeze({ buildSearchUrl, buildJobUrl, jobIdFromUrl, DATE_POSTED });
