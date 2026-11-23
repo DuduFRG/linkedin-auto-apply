@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /obrigado/
+Disallow: /linkedin-auto-apply/obrigado/
+
+# AI assistants and search engines are welcome to read and cite this site.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://dudufrg.github.io/linkedin-auto-apply/sitemap.xml

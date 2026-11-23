@@ -13,6 +13,7 @@
   const { D, T, SEL, UI_TEXT, BLOCKERS, Store, Control, Fields, Resume, Profile } = LAA;
   const { STORAGE: K, STATUS, LIMITS } = LAA.C;
   const { SkipJob, LimitReached } = Control;
+  const M = LAA.I18n.msg;
 
   // ---------------- Page inspection ----------------
 
@@ -194,7 +195,7 @@
           if (known.source === 'answers') used.push(field.key);
           continue;
         }
-        field.error = result.reason || 'A resposta salva não serviu para este campo.';
+        field.error = result.reason || M('savedAnswerInvalid');
       }
       unknown.push({ field, known });
     }
@@ -217,9 +218,9 @@
       });
     });
 
-    await Store.log('info', `Pergunta nova (${questions.length}) em "${ctx.job.title || 'vaga'}". Aguardando sua resposta.`);
+    await Store.log('info', M('newQuestions', { count: questions.length, job: ctx.job.title || M('jobFallback', { id: ctx.job.jobId }) }));
     const reply = await Control.ask({ kind: 'questions', job: ctx.job, questions });
-    if (!reply || reply.action === 'skip') throw new SkipJob('Vaga pulada pelo usuário.');
+    if (!reply || reply.action === 'skip') throw new SkipJob(M('userSkipped'));
 
     const answers = reply.answers || {};
     const rememberMap = reply.remember || {};
@@ -227,7 +228,7 @@
       const value = answers[field.key];
       if (value == null || value === '' || (Array.isArray(value) && !value.length)) continue;
       const result = await Fields.fillField(field, value);
-      if (!result.ok) await Store.log('warn', `Não consegui preencher "${field.label}": ${result.reason || 'valor rejeitado'}.`);
+      if (!result.ok) await Store.log('warn', M('fillFailed', { label: field.label, reason: result.reason || M('valueRejected') }));
       if (rememberMap[field.key] !== false) await remember(field, value, known.profileField, ctx);
     }
   }
@@ -238,16 +239,16 @@
     const ready = await D.waitFor(() => findEasyApplyButton() || alreadyApplied() || closedForApplications() || D.first(SEL.jobTitle), {
       timeout: 15000,
     });
-    if (!ready) throw new SkipJob('A página da vaga não carregou.', STATUS.FAILED);
+    if (!ready) throw new SkipJob(M('jobNotLoaded'), STATUS.FAILED);
     // Give the top card a moment to render its apply button.
     await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 6000 });
 
-    if (alreadyApplied()) throw new SkipJob('Você já se candidatou a esta vaga.');
-    if (closedForApplications()) throw new SkipJob('A vaga não aceita mais candidaturas.');
+    if (alreadyApplied()) throw new SkipJob(M('alreadyApplied'));
+    if (closedForApplications()) throw new SkipJob(M('jobClosed'));
 
     const button = findEasyApplyButton();
-    if (!button) throw new SkipJob('Vaga sem candidatura simplificada.');
-    if (D.isDisabled(button)) throw new SkipJob('Botão de candidatura desativado.');
+    if (!button) throw new SkipJob(M('noEasyApply'));
+    if (D.isDisabled(button)) throw new SkipJob(M('buttonDisabled'));
 
     await D.pause(700, 1500);
     D.click(button);
@@ -255,7 +256,7 @@
     const modal = await D.waitFor(getModal, { timeout: 12000 });
     if (!modal) {
       if (hitDailyLimit()) throw new LimitReached();
-      throw new SkipJob('O formulário de candidatura não abriu.', STATUS.FAILED);
+      throw new SkipJob(M('formNotOpened'), STATUS.FAILED);
     }
     await D.pause(600, 1200);
     return modal;
@@ -264,7 +265,7 @@
   async function submit(action, ctx) {
     if (ctx.settings.confirmBeforeSubmit) {
       const reply = await Control.ask({ kind: 'confirm', job: ctx.job });
-      if (!reply || reply.action !== 'submit') throw new SkipJob('Envio cancelado pelo usuário.');
+      if (!reply || reply.action !== 'submit') throw new SkipJob(M('submitCancelled'));
     }
     await Control.checkpoint();
     D.click(action.button);
@@ -284,10 +285,10 @@
     if (outcome === 'limit') throw new LimitReached();
     if (outcome === 'success') {
       await closeSuccessDialog();
-      return { status: STATUS.APPLIED, reason: 'Candidatura enviada.' };
+      return { status: STATUS.APPLIED, reason: M('applied') };
     }
     if (outcome === 'error') return { retry: true };
-    throw new SkipJob('Não foi possível confirmar o envio da candidatura.', STATUS.FAILED);
+    throw new SkipJob(M('submitUnconfirmed'), STATUS.FAILED);
   }
 
   async function applyToJob(ctx) {
@@ -300,8 +301,8 @@
 
       const modal = getModal();
       if (!modal) {
-        if (successVisible()) return { status: STATUS.APPLIED, reason: 'Candidatura enviada.' };
-        throw new SkipJob('O formulário foi fechado inesperadamente.', STATUS.FAILED);
+        if (successVisible()) return { status: STATUS.APPLIED, reason: M('applied') };
+        throw new SkipJob(M('formClosed'), STATUS.FAILED);
       }
       if (hitDailyLimit(modal)) throw new LimitReached();
 
@@ -311,7 +312,7 @@
       setFollowCompany(modal, !!ctx.settings.followCompanies);
 
       action = primaryAction(getModal() || modal);
-      if (!action) throw new SkipJob('Botão de avanço não encontrado no formulário.', STATUS.FAILED);
+      if (!action) throw new SkipJob(M('noNextButton'), STATUS.FAILED);
       await D.waitFor(() => !D.isDisabled(action.button), { timeout: 3000 });
       await D.pause(500, 1100);
 
@@ -335,18 +336,18 @@
       const errors = current ? errorsIn(current) : [];
       if (errors.length) {
         validationRetries += 1;
-        await Store.log('warn', `Validação do LinkedIn: ${errors.slice(0, 3).join(' | ')}`);
+        await Store.log('warn', M('validationLog', { errors: errors.slice(0, 3).join(' | ') }));
         if (validationRetries > LIMITS.MAX_VALIDATION_RETRIES) {
-          throw new SkipJob(`Formulário não aceitou as respostas: ${errors[0]}`, STATUS.FAILED);
+          throw new SkipJob(M('validationFailed', { error: errors[0] }), STATUS.FAILED);
         }
         // Errors not attached to any answerable field (e.g. a required file upload) cannot be fixed.
         const answerable = Fields.extractFields(current).some((f) => f.error);
-        if (!answerable) throw new SkipJob(`Campo que não pode ser preenchido automaticamente: ${errors[0]}`, STATUS.FAILED);
+        if (!answerable) throw new SkipJob(M('unfillable', { error: errors[0] }), STATUS.FAILED);
       } else {
         validationRetries = 0;
       }
     }
-    throw new SkipJob('Formulário com etapas demais.', STATUS.FAILED);
+    throw new SkipJob(M('tooManySteps'), STATUS.FAILED);
   }
 
   /** Runs one job end to end and always leaves the page without an open modal. */
@@ -361,7 +362,7 @@
           /* best effort */
         }
       }
-      if (err instanceof SkipJob) return { status: err.status, reason: err.message };
+      if (err instanceof SkipJob) return { status: err.status, reason: err.reason };
       throw err;
     }
   }

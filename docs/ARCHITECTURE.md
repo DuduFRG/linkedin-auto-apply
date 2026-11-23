@@ -1,106 +1,112 @@
-# Arquitetura
+# Architecture
 
-## Visão geral
+## Overview
 
 ```
 ┌──────────────────┐   runtime messages    ┌──────────────────────┐
 │   Side panel     │ ────────────────────► │   Service worker     │
 │  (sidepanel/)    │  START/PAUSE/RESUME/  │  (background/)       │
-│                  │  STOP/FOCUS_TAB       │  abre a aba, badge,  │
-└───────┬──────────┘                       │  notificações        │
+│                  │  STOP/FOCUS_TAB       │  owns the tab, badge,│
+└───────┬──────────┘                       │  notifications       │
         │                                  └──────────┬───────────┘
-        │        chrome.storage.local (fonte única de verdade)
+        │       chrome.storage.local (single source of truth)
         └──────────────┬──────────────────────────────┘
                        │  settings · profile · answers · history
                        │  run · control · pending · pendingAnswer · log
                ┌───────┴──────────┐
-               │  Content script  │  roda em www.linkedin.com,
-               │  (content/)      │  só age na aba dona da execução
+               │  Content script  │  runs on www.linkedin.com,
+               │  (content/)      │  acts only in the run's tab
                └──────────────────┘
 ```
 
-O `chrome.storage.local` funciona também como barramento de mensagens. Isso torna o sistema resistente a:
+`chrome.storage.local` doubles as the message bus. That makes the system resilient to:
 
-- **Service worker dormindo** (Manifest V3 encerra o worker quando ocioso).
-- **Recarregamentos de página:** toda navegação é uma carga completa; o content script lê o estado e continua de onde parou.
-- **Painel fechado:** a pergunta fica pendente em `pending` até o painel ser aberto e respondido.
+- **Service worker shutdown** (Manifest V3 stops idle workers).
+- **Page reloads:** every navigation is a full load; the content script reads state and continues where it left off.
+- **A closed panel:** a question stays in `pending` until the panel is opened and answered.
 
-## Propriedade do estado
+## State ownership
 
-| Chave | Quem escreve | Quem lê |
+| Key | Written by | Read by |
 | --- | --- | --- |
-| `control.state` (`idle`, `running`, `paused`) | Service worker (comandos do painel); content script ao encerrar ou pausar por erro | Content script (checkpoints), painel |
-| `run` (fase, fila, vaga atual, estatísticas) | Content script; service worker ao iniciar | Painel, service worker (badge) |
-| `pending` | Content script | Painel, service worker (notificação) |
-| `pendingAnswer` | Painel | Content script |
-| `answers`, `profile`, `settings` | Painel e content script | Ambos |
+| `control.state` (`idle`, `running`, `paused`) | Service worker (panel commands); content script when finishing or pausing on error | Content script (checkpoints), panel |
+| `run` (phase, queue, current job, stats) | Content script; service worker on start | Panel, service worker (badge) |
+| `pending` | Content script | Panel, service worker (notification) |
+| `pendingAnswer` | Panel | Content script |
+| `answers`, `profile`, `settings` | Panel and content script | Both |
 
-Separar `control` (intenção do usuário) de `run` (progresso da automação) evita condições de corrida entre o botão Pausar e as atualizações de progresso.
+Separating `control` (the user's intent) from `run` (automation progress) avoids races between the Pause button and progress updates.
 
-## Fluxo do content script (`runner.js`)
+## Internationalisation
 
-Cada carregamento de página executa **um passo**, decidido pela URL:
+`shared/i18n.js` holds every string in Portuguese, English and Spanish. The automation never stores translated text: it stores message objects such as `{ key: 'applyingTo', params: { title } }` in the log, history and run state. The panel and notifications translate them at render time, so switching language updates everything instantly, including past history. Static panel markup uses `data-i18n`, `data-i18n-ph`, `data-i18n-title` and `data-i18n-aria` attributes. `_locales/` translates the extension name and description shown by Chrome.
 
-| URL | Ação |
+A unit test enforces that all three languages define the same keys and placeholders, and that every key used in code exists.
+
+## Content script flow (`runner.js`)
+
+Each page load performs **one step**, chosen by URL:
+
+| URL | Action |
 | --- | --- |
-| `/jobs/search/...` | `Search.collect()` rola a lista, coleta IDs, remove os já processados, salva a fila e abre a primeira vaga. |
-| `/jobs/view/<id>/` | `EasyApply.run()` processa a vaga, registra o resultado, aguarda o intervalo e abre a próxima vaga (ou a próxima página de resultados). |
-| Login, checkpoint ou captcha | Pausa com status de atenção e notifica. |
-| Outra | Navega para a busca. |
+| `/jobs/search/...` | `Search.collect()` scrolls the list, collects ids, drops processed ones, saves the queue and opens the first job. |
+| `/jobs/view/<id>/` | `EasyApply.run()` processes the job, records the result, waits and opens the next job (or the next results page). |
+| Sign-in, checkpoint or captcha | Pauses with an attention status and notifies. |
+| Anything else | Navigates to the search. |
 
-## Máquina de estados de uma candidatura (`easy-apply.js`)
+## One application (`easy-apply.js`)
 
 ```
-abrir vaga ─► já candidatada? ─► sim ─► SKIPPED
+open job ─► already applied? ─► yes ─► SKIPPED
    │
    ▼
-clicar Easy Apply ─► modal abriu? ─► não ─► limite diário? ─► encerra execução
-   │                                             └──► FAILED
+click Easy Apply ─► modal opened? ─► no ─► daily limit? ─► end run
+   │                                            └──► FAILED
    ▼
-┌─► etapa atual
-│     ├─ currículo (resume.js): seleciona; se desconhecido, pergunta e salva
-│     ├─ campos (fields.js): extrai → resolve (perfil → respostas) → preenche
-│     │      └─ desconhecidos obrigatórios → pergunta em lote → salva → preenche
-│     ├─ revisão: ajusta "seguir empresa"
-│     └─ botão principal
-│           ├─ Avançar/Revisar → espera mudança de etapa
-│           │      └─ erros de validação → reabre a pergunta com o erro (máx. 2)
-│           └─ Enviar → (confirmação opcional) → sucesso? APPLIED
+┌─► current step
+│     ├─ resume (resume.js): select; if unknown, ask and save
+│     ├─ fields (fields.js): extract → resolve (profile → answers) → fill
+│     │      └─ unknown required → ask as a batch → save → fill
+│     ├─ review: set "follow company"
+│     └─ primary button
+│           ├─ Next/Review → wait for the step to change
+│           │      └─ validation errors → ask again with the error (max 2)
+│           └─ Submit → (optional confirmation) → success? APPLIED
 └──────────┘
-Qualquer SkipJob → descarta o formulário → SKIPPED/FAILED
-StopSignal       → descarta o formulário → execução interrompida
+Any SkipJob → discard the form → SKIPPED/FAILED
+StopSignal  → discard the form → run stopped
 ```
 
-## Identificação das perguntas
+## Recognising questions
 
-`text.js` gera a chave `família:rótulo-normalizado`:
+`text.js` builds the key `family:normalised-label`:
 
-- Família `choice`: select e radio (compartilham respostas).
-- Família `text`: texto, número, data, textarea, typeahead.
-- Família `multi`: grupo de checkboxes.
-- Família `checkbox`: checkbox único (sim/não).
+- `choice`: select and radio (they share answers).
+- `text`: text, number, date, textarea, typeahead.
+- `multi`: checkbox group.
+- `checkbox`: single checkbox (yes/no).
 
-Ordem de resolução de um campo:
+Resolution order for a field:
 
-1. **Perfil** (`profile.js`): e-mail, telefone, código do país, nome, cidade, LinkedIn, site.
-2. **Banco de respostas**: correspondência exata da chave.
-3. **Usuário**: pergunta no painel, com sugestão da resposta mais parecida (similaridade de Jaccard ≥ 0,6), nunca aplicada sem confirmação.
+1. **Profile** (`profile.js`): email, phone, country code, name, city, LinkedIn, website.
+2. **Answer bank**: exact key match.
+3. **User**: asked in the panel, with the closest saved answer suggested (Jaccard similarity ≥ 0.6), never applied without confirmation.
 
-Campos já preenchidos pelo LinkedIn são respeitados. Campos opcionais desconhecidos são ignorados (configurável).
+Fields LinkedIn already prefilled are kept. Unknown optional fields are skipped (configurable).
 
-## Manutenção dos seletores
+## Maintaining selectors
 
-O LinkedIn muda o HTML com frequência. Todo o conhecimento específico do site está em [`extension/content/selectors.js`](../extension/content/selectors.js):
+LinkedIn changes its HTML often. All site-specific knowledge lives in [`extension/content/selectors.js`](../extension/content/selectors.js):
 
-- `LAA.SEL`: listas ordenadas de seletores (atributos `data-*` primeiro, depois classes, depois `aria-label`).
-- `LAA.UI_TEXT`: textos de botões e mensagens em EN, PT-BR, ES, FR e DE, comparados sem acentos e por palavra inteira.
-- `LAA.BLOCKERS`: padrões de captcha, login e limite diário.
+- `LAA.SEL`: ordered selector lists (`data-*` attributes first, then classes, then `aria-label`).
+- `LAA.UI_TEXT`: button and message text in EN, PT-BR, ES, FR and DE, compared accent-free on whole words.
+- `LAA.BLOCKERS`: captcha, sign-in and daily-limit patterns.
 
-Para diagnosticar um layout novo: abra uma vaga, inicie o Easy Apply manualmente, inspecione o modal no DevTools e acrescente o novo seletor no início da lista correspondente. Depois rode `npm run test:e2e`.
+To support a new layout: open a job, start Easy Apply by hand, inspect the modal in DevTools and add the new selector at the top of the matching list. Then run `npm run test:e2e`.
 
-## Decisões de projeto
+## Design decisions
 
-- **Sem build e sem dependências em produção:** os arquivos são scripts clássicos que se registram em `globalThis.LAA`. O mesmo arquivo roda no content script, no service worker (`importScripts`), no painel e no Node (testes).
-- **Navegação por URL de vaga** (`/jobs/view/<id>/`) em vez de clicar na lista: mais estável a mudanças do layout de busca e naturalmente retomável.
-- **Pausas aleatórias** entre ações (0,4 a 1,5 s) e entre candidaturas (configurável), digitação caractere a caractere em campos com autocompletar.
-- **Renderização segura no painel:** apenas `textContent` para dados vindos do LinkedIn.
+- **No build, no runtime dependencies:** files are classic scripts that register on `globalThis.LAA`. The same file runs in the content script, the service worker (`importScripts`), the panel and Node (tests).
+- **Navigation by job URL** (`/jobs/view/<id>/`) instead of clicking the list: more robust to search layout changes and naturally resumable.
+- **Random pauses** between actions (0.4 to 1.5 s) and between applications (configurable); character-by-character typing in autocomplete fields.
+- **Safe rendering in the panel:** only `textContent` for data coming from LinkedIn.

@@ -6,9 +6,16 @@
  * is read from and written to chrome.storage.local.
  */
 /* global importScripts */
-importScripts('../shared/constants.js', '../shared/storage.js', '../shared/search-url.js');
+importScripts('../shared/constants.js', '../shared/i18n.js', '../shared/storage.js', '../shared/search-url.js');
 
-const { Store, Urls } = self.LAA;
+const { Store, Urls, I18n } = self.LAA;
+const M = I18n.msg;
+
+/** Text in the user's chosen language (used for OS notifications). */
+async function text(value) {
+  const settings = await Store.get(K.SETTINGS);
+  return I18n.render(I18n.resolve(settings.language, self.navigator && self.navigator.language), value);
+}
 const { STORAGE: K, MSG, CONTROL_STATE: S, PHASE } = self.LAA.C;
 
 const NOTIFY_QUESTION = 'laa-question';
@@ -28,7 +35,7 @@ chrome.runtime.onStartup.addListener(async () => {
   const control = await Store.get(K.CONTROL);
   if (control.state !== S.IDLE) {
     await Store.patch(K.CONTROL, { state: S.IDLE });
-    await Store.patchRun({ phase: PHASE.STOPPED, message: 'Navegador reiniciado. Inicie novamente.', current: null });
+    await Store.patchRun({ phase: PHASE.STOPPED, message: M('browserRestarted'), current: null });
   }
   await Store.set(K.PENDING, null);
   await refreshBadge();
@@ -49,7 +56,7 @@ async function getRunTab() {
 async function start() {
   const settings = await Store.get(K.SETTINGS);
   if (!String(settings.keyword || '').trim()) {
-    return { ok: false, error: 'Informe a palavra-chave da vaga.' };
+    return { ok: false, error: M('keywordRequired') };
   }
 
   const search = {
@@ -81,10 +88,13 @@ async function start() {
     emptyPages: 0,
     errorStreak: 0,
     startedAt: Date.now(),
-    message: 'Abrindo o LinkedIn…',
+    message: M('openingLinkedIn'),
   });
   await Store.set(K.CONTROL, { state: S.RUNNING, at: Date.now() });
-  await Store.log('info', `Iniciando: "${search.keyword}"${search.location ? ` em ${search.location}` : ''}.`);
+  await Store.log(
+    'info',
+    search.location ? M('runStartingIn', { keyword: search.keyword, location: search.location }) : M('runStarting', { keyword: search.keyword })
+  );
   await chrome.tabs.update(tab.id, { url });
   return { ok: true };
 }
@@ -95,8 +105,8 @@ async function resume() {
   if (!tab || !run.search) return start();
 
   await Store.patch(K.CONTROL, { state: S.RUNNING, at: Date.now() });
-  await Store.patchRun({ phase: PHASE.STARTING, errorStreak: 0, message: 'Retomando…' });
-  await Store.log('info', 'Execução retomada.');
+  await Store.patchRun({ phase: PHASE.STARTING, errorStreak: 0, message: M('resuming') });
+  await Store.log('info', M('runResumed'));
 
   // If the tab left LinkedIn (or the content script is gone), reload the flow.
   const onLinkedIn = /^https:\/\/www\.linkedin\.com\//.test(tab.url || '');
@@ -110,7 +120,7 @@ async function resume() {
 
 async function pause() {
   await Store.patch(K.CONTROL, { state: S.PAUSED, at: Date.now() });
-  await Store.log('info', 'Execução pausada.');
+  await Store.log('info', M('runPaused'));
   return { ok: true };
 }
 
@@ -118,13 +128,13 @@ async function stop() {
   // The content script treats idle as "stop": it unwinds and discards any open form.
   await Store.patch(K.CONTROL, { state: S.IDLE, at: Date.now() });
   await Store.set(K.PENDING, null);
-  await Store.patchRun({ phase: PHASE.STOPPED, message: 'Execução interrompida.', current: null, cooldownUntil: null });
+  await Store.patchRun({ phase: PHASE.STOPPED, message: M('runStopped'), current: null, cooldownUntil: null });
   return { ok: true };
 }
 
 async function focusTab() {
   const tab = await getRunTab();
-  if (!tab) return { ok: false, error: 'A aba da automação não está aberta.' };
+  if (!tab) return { ok: false, error: M('noRunTab') };
   await chrome.tabs.update(tab.id, { active: true });
   await chrome.windows.update(tab.windowId, { focused: true });
   return { ok: true };
@@ -164,8 +174,8 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   if (control.state === S.IDLE) return;
   await Store.patch(K.CONTROL, { state: S.IDLE });
   await Store.set(K.PENDING, null);
-  await Store.patchRun({ phase: PHASE.STOPPED, message: 'A aba da automação foi fechada.', current: null, tabId: null });
-  await Store.log('warn', 'A aba da automação foi fechada. Execução encerrada.');
+  await Store.patchRun({ phase: PHASE.STOPPED, message: M('tabClosed'), current: null, tabId: null });
+  await Store.log('warn', M('tabClosedLog'));
 });
 
 // ---------------- Badge & notifications ----------------
@@ -190,12 +200,12 @@ async function refreshBadge() {
   await chrome.action.setBadgeBackgroundColor({ color });
 }
 
-function notify(id, title, message) {
+async function notify(id, title, message) {
   chrome.notifications.create(id, {
     type: 'basic',
     iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-    title,
-    message,
+    title: await text(title),
+    message: await text(message),
     priority: 2,
   });
 }
@@ -208,14 +218,12 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const pending = changes[K.PENDING].newValue;
     if (pending) {
       const job = pending.job || {};
-      const label = [job.title, job.company].filter(Boolean).join(' · ');
-      notify(
-        NOTIFY_QUESTION,
-        pending.kind === 'confirm' ? 'Confirme o envio da candidatura' : 'Preciso de uma resposta sua',
-        pending.kind === 'confirm'
-          ? `Pronto para enviar: ${label}`
-          : `${(pending.questions || []).length} pergunta(s) nova(s)${label ? ` em ${label}` : ''}. Abra o painel do ApplyPilot.`
-      );
+      const label = [job.title, job.company].filter(Boolean).join(' · ') || 'LinkedIn';
+      if (pending.kind === 'confirm') {
+        notify(NOTIFY_QUESTION, M('notifyConfirmTitle'), M('notifyConfirmBody', { job: label }));
+      } else {
+        notify(NOTIFY_QUESTION, M('notifyQuestionTitle'), M('notifyQuestionBody', { count: (pending.questions || []).length, job: label }));
+      }
     } else {
       chrome.notifications.clear(NOTIFY_QUESTION);
     }
@@ -225,7 +233,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const prev = changes[K.RUN].oldValue || {};
     const next = changes[K.RUN].newValue || {};
     if (prev.phase !== next.phase && (next.phase === PHASE.FINISHED || next.phase === PHASE.ERROR)) {
-      notify(NOTIFY_DONE, next.phase === PHASE.FINISHED ? 'Execução concluída' : 'Atenção necessária', next.message || '');
+      notify(NOTIFY_DONE, next.phase === PHASE.FINISHED ? M('notifyFinishedTitle') : M('notifyAttentionTitle'), next.message || '');
     }
   }
 });

@@ -14,6 +14,7 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..', '..', 'extension');
 const SCRIPTS = [
   'shared/constants.js',
+  'shared/i18n.js',
   'shared/text.js',
   'shared/storage.js',
   'shared/profile.js',

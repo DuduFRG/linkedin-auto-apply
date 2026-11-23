@@ -17,6 +17,7 @@
 
   const DEFAULTS = Object.freeze({
     [K.SETTINGS]: {
+      language: 'auto', // auto | pt | en | es
       keyword: '',
       location: '',
       resumeName: '',
@@ -160,7 +161,8 @@
   // ---------- Domain helpers ----------
 
   async function log(level, message, extra) {
-    const entry = { at: Date.now(), level, message: String(message) };
+    // `message` is an i18n message object ({ key, params }) or plain text.
+    const entry = { at: Date.now(), level, message: message && typeof message === 'object' ? message : String(message) };
     if (extra) entry.extra = extra;
     await update(K.LOG, (list) => {
       const next = Array.isArray(list) ? list.slice(-(LIMITS.MAX_LOG - 1)) : [];
@@ -224,7 +226,7 @@
 
   async function importData(payload, { merge = true } = {}) {
     if (!payload || typeof payload !== 'object' || typeof payload.answers !== 'object') {
-      throw new Error('Arquivo inválido: campo "answers" ausente.');
+      throw new Error('importInvalid');
     }
     await update(K.ANSWERS, (answers) => (merge ? { ...answers, ...payload.answers } : { ...payload.answers }));
     if (payload.profile && typeof payload.profile === 'object') await patch(K.PROFILE, payload.profile);

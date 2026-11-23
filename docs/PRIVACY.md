@@ -1,50 +1,54 @@
-# Privacidade e dados locais
+# Privacy and local data
 
-## Resumo
+## Summary
 
-- Todos os seus dados ficam **somente no seu computador**, dentro do perfil do Chrome.
-- O repositório **não contém** e **nunca deve conter** dados pessoais.
-- A extensão **não faz requisições de rede próprias**. Ela só interage com as páginas do LinkedIn que você já acessa.
+- All your data stays **on your computer**, inside your Chrome profile.
+- This repository **does not and must never** contain personal data.
+- The extension **makes no network requests of its own**. It only interacts with LinkedIn pages you already visit.
 
-## Onde os dados ficam
+## Where data is stored
 
-A extensão grava exclusivamente em `chrome.storage.local`, uma área de armazenamento privada da extensão, guardada na pasta do seu perfil do Chrome. Ela não é sincronizada com a sua conta Google (`chrome.storage.sync` não é usado) e outras extensões ou sites não têm acesso a ela.
+The extension writes exclusively to `chrome.storage.local`, a private storage area owned by the extension inside your Chrome profile folder. It is not synced to your Google account (`chrome.storage.sync` is never used), and other extensions and websites cannot read it.
 
-| Chave | Conteúdo |
+| Key | Contents |
 | --- | --- |
-| `settings` | Cargo, localização, nome do currículo, metas e intervalos. |
-| `profile` | Nome, e-mail, telefone, cidade, links. |
-| `answers` | Banco de respostas aprendidas (pergunta → resposta). |
-| `history` | Vagas processadas: título, empresa, status e motivo. |
-| `run`, `control`, `pending`, `pendingAnswer` | Estado temporário da execução atual. |
-| `log` | Últimas 300 linhas de atividade. |
+| `settings` | Language, job title, location, resume name, goals and pauses. |
+| `profile` | Name, email, phone, city, links. |
+| `answers` | Learned answer bank (question → answer). |
+| `history` | Processed jobs: title, company, status and reason. |
+| `run`, `control`, `pending`, `pendingAnswer` | Temporary state of the current run. |
+| `log` | The latest 300 activity lines. |
 
-Toda a escrita passa por um único módulo: [`extension/shared/storage.js`](../extension/shared/storage.js).
+Every write goes through a single module: [`extension/shared/storage.js`](../extension/shared/storage.js).
 
-## Garantias técnicas
+## Technical guarantees
 
-- **Sem rede:** o `manifest.json` define `connect-src 'none'` para as páginas da extensão. O painel e o service worker não conseguem fazer `fetch` nem `XMLHttpRequest`.
-- **Sem código remoto:** `script-src 'self'`. Nenhuma biblioteca, fonte ou script externo é carregado.
-- **Permissões mínimas:** `storage`, `sidePanel`, `tabs`, `notifications` e acesso apenas a `https://www.linkedin.com/*`.
-- **Sem dados no código:** nenhum nome, e-mail ou resposta está no repositório. O único exemplo, [`examples/answers.example.json`](../examples/answers.example.json), é fictício.
-- **`.gitignore` defensivo:** backups exportados (`applypilot-backup-*.json`), `answers.json`, `*.local.json`, `.env` e pastas `data/`, `exports/` e `backups/` são ignorados pelo Git.
+- **No network:** `manifest.json` sets `connect-src 'none'` for extension pages. The side panel and the service worker cannot call `fetch` or `XMLHttpRequest`.
+- **No remote code:** `script-src 'self'`. No external library, font or script is loaded.
+- **Minimal permissions:** `storage`, `sidePanel`, `tabs`, `notifications`, and host access to `https://www.linkedin.com/*` only.
+- **No data in code:** no name, email or answer lives in the repository. The only example, [`examples/answers.example.json`](../examples/answers.example.json), is fictional.
+- **Defensive `.gitignore`:** exported backups (`applypilot-backup-*.json`), `answers.json`, `*.local.json`, `.env` and the `data/`, `exports/` and `backups/` folders are ignored by Git.
 
-## Backup e migração
+## Backup and migration
 
-No painel, aba **Respostas**:
+In the side panel, **Answers** tab:
 
-- **Exportar** gera `applypilot-backup-AAAA-MM-DD.json` com configurações, perfil e respostas.
-- **Importar** mescla um backup no navegador atual.
+- **Export** creates `applypilot-backup-YYYY-MM-DD.json` with settings, profile and answers.
+- **Import** merges a backup into the current browser.
 
-Trate esse arquivo como dado pessoal. Não o coloque dentro da pasta do repositório (e, se colocar, o `.gitignore` impede o commit pelo nome padrão).
+Treat that file as personal data. Do not keep it inside the repository folder (if you do, `.gitignore` blocks it by its default name).
 
-## Como apagar tudo
+## Deleting everything
 
-Qualquer uma das opções:
+Either:
 
-1. No painel: **Respostas → Apagar todas as respostas** e **Histórico → Limpar**.
-2. Em `chrome://extensions`, remova a extensão. O Chrome apaga todo o `chrome.storage.local` dela.
+1. In the panel: **Answers → Delete all answers** and **History → Clear**.
+2. In `chrome://extensions`, remove the extension. Chrome deletes all of its `chrome.storage.local`.
 
-## O que o LinkedIn vê
+## What LinkedIn sees
 
-O LinkedIn recebe exatamente o que receberia se você preenchesse o formulário manualmente: as respostas de cada candidatura enviada. A extensão não envia nenhuma informação adicional.
+LinkedIn receives exactly what it would receive if you filled in the form by hand: the answers of each application you submit. The extension sends no additional information.
+
+## Landing page
+
+The project website (`site/`) is a static page hosted on GitHub Pages. It uses no cookies, no analytics and no third-party scripts. Fonts and images are self-hosted. GitHub may keep standard server logs as described in the [GitHub Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).

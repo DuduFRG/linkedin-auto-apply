@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
+    <!-- Static text is translated at runtime from shared/i18n.js through data-i18n* attributes. -->
     <header class="app-header">
       <div class="brand">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -16,199 +17,211 @@
         </svg>
         <div>
           <h1>ApplyPilot</h1>
-          <p>Candidaturas simplificadas no piloto automático</p>
+          <p data-i18n="tagline"></p>
         </div>
       </div>
-      <button id="btnFocusTab" class="icon-btn" type="button" title="Ir para a aba da automação" aria-label="Ir para a aba da automação">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
-      </button>
+      <div class="header-actions">
+        <label class="lang-select">
+          <span class="sr-only" data-i18n="language"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+          <select id="languageSelect" data-setting="language">
+            <option value="auto" data-i18n="languageAuto"></option>
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </label>
+        <button id="btnFocusTab" class="icon-btn" type="button" data-i18n-title="goToTab" data-i18n-aria="goToTab">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+        </button>
+      </div>
     </header>
 
     <!-- Question / confirmation card. Rendered by sidepanel.js -->
     <section id="pendingCard" class="card pending" hidden aria-live="polite"></section>
 
-    <section class="card status-card" aria-label="Status da execução">
+    <section class="card status-card">
       <div class="status-top">
-        <span id="statusPill" class="pill" data-tone="neutral"><span class="dot"></span><span id="statusLabel">Parado</span></span>
+        <span id="statusPill" class="pill" data-tone="neutral"><span class="dot"></span><span id="statusLabel"></span></span>
         <span id="statusTimer" class="status-timer"></span>
       </div>
-      <p id="statusMessage" class="status-message">Configure a busca e clique em Iniciar.</p>
+      <p id="statusMessage" class="status-message"></p>
 
       <div id="currentJob" class="current-job" hidden>
-        <span class="eyebrow">Vaga atual</span>
+        <span class="eyebrow" data-i18n="currentJob"></span>
         <a id="currentJobTitle" class="current-job-title" target="_blank" rel="noopener noreferrer"></a>
         <span id="currentJobCompany" class="current-job-company"></span>
       </div>
 
       <dl class="stats">
-        <div class="stat"><dt>Enviadas</dt><dd id="statApplied">0</dd></div>
-        <div class="stat"><dt>Puladas</dt><dd id="statSkipped">0</dd></div>
-        <div class="stat"><dt>Falhas</dt><dd id="statFailed">0</dd></div>
+        <div class="stat"><dt data-i18n="statApplied"></dt><dd id="statApplied">0</dd></div>
+        <div class="stat"><dt data-i18n="statSkipped"></dt><dd id="statSkipped">0</dd></div>
+        <div class="stat"><dt data-i18n="statFailed"></dt><dd id="statFailed">0</dd></div>
       </dl>
 
-      <div class="progress" role="progressbar" aria-label="Progresso da meta" aria-valuemin="0" id="progress">
+      <div class="progress" role="progressbar" data-i18n-aria="goalAria" aria-valuemin="0" id="progress">
         <div class="progress-bar" id="progressBar"></div>
       </div>
-      <p class="progress-meta" id="progressText">0 de 25 candidaturas</p>
+      <p class="progress-meta" id="progressText"></p>
 
       <div class="controls">
         <button id="btnPrimary" class="btn btn-primary" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true" id="btnPrimaryIcon"><path d="M8 5v14l11-7z" /></svg>
-          <span id="btnPrimaryLabel">Iniciar</span>
+          <span id="btnPrimaryLabel"></span>
         </button>
         <button id="btnStop" class="btn btn-secondary" type="button" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
-          <span>Parar</span>
+          <span data-i18n="stop"></span>
         </button>
       </div>
     </section>
 
-    <nav class="tabs" role="tablist" aria-label="Seções">
-      <button class="tab" role="tab" type="button" data-tab="run" aria-selected="true">Busca</button>
-      <button class="tab" role="tab" type="button" data-tab="answers" aria-selected="false">Respostas <span class="tab-count" id="answersCount">0</span></button>
-      <button class="tab" role="tab" type="button" data-tab="profile" aria-selected="false">Perfil</button>
-      <button class="tab" role="tab" type="button" data-tab="history" aria-selected="false">Histórico</button>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" type="button" data-tab="run" aria-selected="true"><span data-i18n="tabSearch"></span></button>
+      <button class="tab" role="tab" type="button" data-tab="answers" aria-selected="false"><span data-i18n="tabAnswers"></span> <span class="tab-count" id="answersCount">0</span></button>
+      <button class="tab" role="tab" type="button" data-tab="profile" aria-selected="false"><span data-i18n="tabProfile"></span></button>
+      <button class="tab" role="tab" type="button" data-tab="history" aria-selected="false"><span data-i18n="tabHistory"></span></button>
     </nav>
 
     <main>
-      <!-- ============ Busca ============ -->
+      <!-- ============ Search ============ -->
       <section class="tab-panel" id="tab-run" role="tabpanel">
         <form class="card form" id="settingsForm" autocomplete="off">
           <div class="card-head">
-            <h2>Configuração da busca</h2>
-            <span class="hint" id="searchLockHint" hidden>Em execução: a busca vale na próxima vez que iniciar.</span>
+            <h2 data-i18n="searchSettings"></h2>
+            <span class="hint" id="searchLockHint" data-i18n="searchLocked" hidden></span>
           </div>
 
           <label class="field">
-            <span class="field-label">Cargo ou palavra-chave <em>*</em></span>
-            <input type="text" data-setting="keyword" data-search placeholder="Ex.: Videomaker, Editor de Vídeo" maxlength="120" />
+            <span class="field-label"><span data-i18n="keyword"></span> <em>*</em></span>
+            <input type="text" data-setting="keyword" data-search data-i18n-ph="keywordPh" maxlength="120" />
           </label>
 
           <label class="field">
-            <span class="field-label">Localização</span>
-            <input type="text" data-setting="location" data-search placeholder="Ex.: São Paulo, Brasil" maxlength="120" />
+            <span class="field-label" data-i18n="location"></span>
+            <input type="text" data-setting="location" data-search data-i18n-ph="locationPh" maxlength="120" />
           </label>
 
           <div class="row">
             <label class="field">
-              <span class="field-label">Publicadas</span>
+              <span class="field-label" data-i18n="datePosted"></span>
               <select data-setting="datePosted" data-search>
-                <option value="any">Qualquer data</option>
-                <option value="month">Último mês</option>
-                <option value="week">Última semana</option>
-                <option value="day">Últimas 24 horas</option>
+                <option value="any" data-i18n="dateAny"></option>
+                <option value="month" data-i18n="dateMonth"></option>
+                <option value="week" data-i18n="dateWeek"></option>
+                <option value="day" data-i18n="dateDay"></option>
               </select>
             </label>
             <label class="field">
-              <span class="field-label">Meta por execução</span>
+              <span class="field-label" data-i18n="goal"></span>
               <input type="number" data-setting="maxApplications" min="1" max="200" step="1" />
             </label>
           </div>
 
           <label class="field">
-            <span class="field-label">Currículo salvo no LinkedIn</span>
-            <input type="text" data-setting="resumeName" placeholder="Nome do arquivo (ex.: CV_Videomaker.pdf)" maxlength="160" />
-            <span class="field-help">Deixe vazio: na primeira candidatura eu listo seus currículos salvos e você escolhe.</span>
+            <span class="field-label" data-i18n="resumeField"></span>
+            <input type="text" data-setting="resumeName" data-i18n-ph="resumePh" maxlength="160" />
+            <span class="field-help" data-i18n="resumeHelp"></span>
           </label>
 
           <details class="advanced">
-            <summary>Opções avançadas</summary>
+            <summary data-i18n="advanced"></summary>
             <div class="row">
               <label class="field">
-                <span class="field-label">Intervalo mín. (s)</span>
+                <span class="field-label" data-i18n="minDelay"></span>
                 <input type="number" data-setting="minDelaySec" min="5" max="600" step="1" />
               </label>
               <label class="field">
-                <span class="field-label">Intervalo máx. (s)</span>
+                <span class="field-label" data-i18n="maxDelay"></span>
                 <input type="number" data-setting="maxDelaySec" min="5" max="900" step="1" />
               </label>
             </div>
             <label class="field">
-              <span class="field-label">Ignorar vagas com estas palavras</span>
-              <input type="text" data-setting="excludeKeywords" placeholder="Ex.: estágio, sênior, freelancer" maxlength="400" />
-              <span class="field-help">Separe por vírgula. Compara com o título e a empresa.</span>
+              <span class="field-label" data-i18n="exclude"></span>
+              <input type="text" data-setting="excludeKeywords" data-i18n-ph="excludePh" maxlength="400" />
+              <span class="field-help" data-i18n="excludeHelp"></span>
             </label>
-            <label class="switch"><input type="checkbox" data-setting="remoteOnly" data-search /><span class="switch-ui"></span><span>Somente vagas remotas</span></label>
-            <label class="switch"><input type="checkbox" data-setting="confirmBeforeSubmit" /><span class="switch-ui"></span><span>Pedir confirmação antes de enviar</span></label>
-            <label class="switch"><input type="checkbox" data-setting="askOptionalFields" /><span class="switch-ui"></span><span>Perguntar também campos opcionais</span></label>
-            <label class="switch"><input type="checkbox" data-setting="followCompanies" /><span class="switch-ui"></span><span>Seguir as empresas ao se candidatar</span></label>
+            <label class="switch"><input type="checkbox" data-setting="remoteOnly" data-search /><span class="switch-ui"></span><span data-i18n="remoteOnly"></span></label>
+            <label class="switch"><input type="checkbox" data-setting="confirmBeforeSubmit" /><span class="switch-ui"></span><span data-i18n="confirmBefore"></span></label>
+            <label class="switch"><input type="checkbox" data-setting="askOptionalFields" /><span class="switch-ui"></span><span data-i18n="askOptional"></span></label>
+            <label class="switch"><input type="checkbox" data-setting="followCompanies" /><span class="switch-ui"></span><span data-i18n="follow"></span></label>
           </details>
         </form>
 
         <section class="card">
           <div class="card-head">
-            <h2>Atividade</h2>
-            <button class="link-btn" type="button" id="btnClearLog">Limpar</button>
+            <h2 data-i18n="activity"></h2>
+            <button class="link-btn" type="button" id="btnClearLog" data-i18n="clear"></button>
           </div>
           <ol class="log" id="logList"></ol>
-          <p class="empty" id="logEmpty">Nenhuma atividade ainda.</p>
+          <p class="empty" id="logEmpty" data-i18n="noActivity"></p>
         </section>
       </section>
 
-      <!-- ============ Respostas ============ -->
+      <!-- ============ Answers ============ -->
       <section class="tab-panel" id="tab-answers" role="tabpanel" hidden>
         <section class="card">
           <div class="card-head">
-            <h2>Banco de respostas</h2>
+            <h2 data-i18n="answerBank"></h2>
             <div class="head-actions">
-              <button class="link-btn" type="button" id="btnExport">Exportar</button>
-              <button class="link-btn" type="button" id="btnImport">Importar</button>
+              <button class="link-btn" type="button" id="btnExport" data-i18n="export"></button>
+              <button class="link-btn" type="button" id="btnImport" data-i18n="import"></button>
               <input type="file" id="importFile" accept="application/json,.json" hidden />
             </div>
           </div>
-          <p class="card-sub">Cada pergunta respondida fica salva aqui e é reutilizada automaticamente. Edite ou apague quando quiser.</p>
-          <input type="search" class="search" id="answersSearch" placeholder="Buscar pergunta ou resposta" />
+          <p class="card-sub" data-i18n="answersSub"></p>
+          <input type="search" class="search" id="answersSearch" data-i18n-ph="answersSearch" data-i18n-aria="answersSearch" />
           <ul class="answers" id="answersList"></ul>
-          <p class="empty" id="answersEmpty">Nenhuma resposta salva ainda. Elas aparecem aqui conforme você responde perguntas novas.</p>
+          <p class="empty" id="answersEmpty"></p>
           <div class="danger-zone">
-            <button class="link-btn danger" type="button" id="btnClearAnswers">Apagar todas as respostas</button>
+            <button class="link-btn danger" type="button" id="btnClearAnswers" data-i18n="clearAnswers"></button>
           </div>
         </section>
       </section>
 
-      <!-- ============ Perfil ============ -->
+      <!-- ============ Profile ============ -->
       <section class="tab-panel" id="tab-profile" role="tabpanel" hidden>
         <form class="card form" id="profileForm" autocomplete="off">
-          <div class="card-head"><h2>Seus dados</h2></div>
-          <p class="card-sub">Usados apenas quando o LinkedIn não preencher sozinho. Ficam salvos somente neste navegador.</p>
+          <div class="card-head"><h2 data-i18n="yourData"></h2></div>
+          <p class="card-sub" data-i18n="profileSub"></p>
           <div class="row">
-            <label class="field"><span class="field-label">Nome</span><input type="text" data-profile="firstName" maxlength="80" /></label>
-            <label class="field"><span class="field-label">Sobrenome</span><input type="text" data-profile="lastName" maxlength="80" /></label>
+            <label class="field"><span class="field-label" data-i18n="firstName"></span><input type="text" data-profile="firstName" maxlength="80" /></label>
+            <label class="field"><span class="field-label" data-i18n="lastName"></span><input type="text" data-profile="lastName" maxlength="80" /></label>
           </div>
-          <label class="field"><span class="field-label">E-mail</span><input type="email" data-profile="email" maxlength="160" /></label>
+          <label class="field"><span class="field-label" data-i18n="email"></span><input type="email" data-profile="email" maxlength="160" /></label>
           <div class="row">
-            <label class="field"><span class="field-label">Código do país</span><input type="text" data-profile="phoneCountry" placeholder="Brasil (+55)" maxlength="40" /></label>
-            <label class="field"><span class="field-label">Celular</span><input type="tel" data-profile="phone" placeholder="11999998888" maxlength="30" /></label>
+            <label class="field"><span class="field-label" data-i18n="phoneCountry"></span><input type="text" data-profile="phoneCountry" data-i18n-ph="phoneCountryPh" maxlength="40" /></label>
+            <label class="field"><span class="field-label" data-i18n="phone"></span><input type="tel" data-profile="phone" maxlength="30" /></label>
           </div>
-          <label class="field"><span class="field-label">Cidade</span><input type="text" data-profile="city" placeholder="São Paulo, São Paulo, Brasil" maxlength="120" /></label>
-          <label class="field"><span class="field-label">Perfil do LinkedIn (URL)</span><input type="url" data-profile="linkedinUrl" maxlength="200" /></label>
-          <label class="field"><span class="field-label">Site ou portfólio</span><input type="url" data-profile="website" maxlength="200" /></label>
+          <label class="field"><span class="field-label" data-i18n="city"></span><input type="text" data-profile="city" data-i18n-ph="cityPh" maxlength="120" /></label>
+          <label class="field"><span class="field-label" data-i18n="linkedinUrl"></span><input type="url" data-profile="linkedinUrl" maxlength="200" /></label>
+          <label class="field"><span class="field-label" data-i18n="website"></span><input type="url" data-profile="website" maxlength="200" /></label>
         </form>
 
         <section class="card privacy">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 9.5 4-1.2 7-5 7-9.5V6z" /><path d="m9 12 2 2 4-4" /></svg>
           <div>
-            <h3>Privacidade</h3>
-            <p>Perfil, respostas e histórico ficam em <code>chrome.storage.local</code>, dentro do seu perfil do Chrome. Nada é enviado para servidores, e a extensão não faz requisições de rede próprias.</p>
+            <h3 data-i18n="privacy"></h3>
+            <p data-i18n="privacyBody"></p>
           </div>
         </section>
       </section>
 
-      <!-- ============ Histórico ============ -->
+      <!-- ============ History ============ -->
       <section class="tab-panel" id="tab-history" role="tabpanel" hidden>
         <section class="card">
           <div class="card-head">
-            <h2>Histórico</h2>
-            <button class="link-btn danger" type="button" id="btnClearHistory">Limpar</button>
+            <h2 data-i18n="history"></h2>
+            <button class="link-btn danger" type="button" id="btnClearHistory" data-i18n="clear"></button>
           </div>
-          <div class="segmented" id="historyFilter" role="group" aria-label="Filtrar histórico">
-            <button type="button" data-filter="all" aria-pressed="true">Todas</button>
-            <button type="button" data-filter="applied" aria-pressed="false">Enviadas</button>
-            <button type="button" data-filter="skipped" aria-pressed="false">Puladas</button>
-            <button type="button" data-filter="failed" aria-pressed="false">Falhas</button>
+          <div class="segmented" id="historyFilter" role="group" data-i18n-aria="filterHistory">
+            <button type="button" data-filter="all" aria-pressed="true" data-i18n="filterAll"></button>
+            <button type="button" data-filter="applied" aria-pressed="false" data-i18n="filterApplied"></button>
+            <button type="button" data-filter="skipped" aria-pressed="false" data-i18n="filterSkipped"></button>
+            <button type="button" data-filter="failed" aria-pressed="false" data-i18n="filterFailed"></button>
           </div>
           <ul class="history" id="historyList"></ul>
-          <p class="empty" id="historyEmpty">Nenhuma candidatura registrada.</p>
+          <p class="empty" id="historyEmpty" data-i18n="historyEmpty"></p>
         </section>
       </section>
     </main>
@@ -216,6 +229,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="../shared/constants.js"></script>
+    <script src="../shared/i18n.js"></script>
     <script src="../shared/text.js"></script>
     <script src="../shared/storage.js"></script>
     <script src="sidepanel.js"></script>

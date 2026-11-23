@@ -1,0 +1,11 @@
+{
+  "appName": {
+    "message": "ApplyPilot: asistente de solicitudes sencillas"
+  },
+  "appDescription": {
+    "message": "Automatiza las solicitudes sencillas de LinkedIn y aprende tus respuestas. Tus datos se quedan solo en tu navegador."
+  },
+  "actionTitle": {
+    "message": "ApplyPilot"
+  }
+}

@@ -14,6 +14,7 @@
 
   const LAA = (root.LAA = root.LAA || {});
   const { D, T, SEL } = LAA;
+  const M = LAA.I18n.msg;
 
   const SKIP_INPUT_TYPES = new Set(['hidden', 'file', 'submit', 'button', 'reset', 'image', 'search']);
   const GROUP_SELECTOR = SEL.formElement.join(', ');
@@ -331,7 +332,7 @@
 
   async function fillField(field, value) {
     if (value == null || (typeof value === 'string' && value.trim() === '' && field.type !== 'textarea')) {
-      return { ok: false, reason: 'Resposta vazia.' };
+      return { ok: false, reason: M('emptyAnswer') };
     }
 
     switch (field.type) {
@@ -348,14 +349,14 @@
         return fillTypeahead(field, String(value));
       case 'select': {
         const idx = T.matchOption(field.options, value);
-        if (idx < 0) return { ok: false, reason: `Opção "${value}" não encontrada.` };
+        if (idx < 0) return { ok: false, reason: M('optionNotFound', { value: String(value) }) };
         D.setSelect(field.el, field.optionEls[idx].value);
         await D.pause(150, 350);
         return { ok: field.el.value === field.optionEls[idx].value };
       }
       case 'radio': {
         const idx = T.matchOption(field.options, value);
-        if (idx < 0) return { ok: false, reason: `Opção "${value}" não encontrada.` };
+        if (idx < 0) return { ok: false, reason: M('optionNotFound', { value: String(value) }) };
         const ok = clickChoice(field.optionEls[idx]);
         await D.pause(150, 350);
         return { ok };
@@ -369,7 +370,7 @@
           setChecked(input, should);
         });
         await D.pause(150, 350);
-        return matched > 0 ? { ok: true } : { ok: false, reason: 'Nenhuma opção correspondente.' };
+        return matched > 0 ? { ok: true } : { ok: false, reason: M('noMatchingOption') };
       }
       case 'checkbox': {
         const want = T.boolish(value) !== false;
@@ -378,7 +379,7 @@
         return { ok: field.el.checked === want };
       }
       default:
-        return { ok: false, reason: `Tipo de campo não suportado: ${field.type}` };
+        return { ok: false, reason: M('unsupportedType', { type: field.type }) };
     }
   }
 

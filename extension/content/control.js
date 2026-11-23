@@ -7,21 +7,24 @@
 
   const LAA = (root.LAA = root.LAA || {});
   const { Store, D } = LAA;
+  const M = LAA.I18n.msg;
   const { STORAGE: K, CONTROL_STATE: S, PHASE } = LAA.C;
 
   /** Thrown when the user stops the run. Unwinds everything. */
   class StopSignal extends Error {
     constructor() {
-      super('Execução interrompida pelo usuário.');
+      super('stop');
       this.name = 'StopSignal';
     }
   }
 
   /** Thrown to abandon the current job and move on to the next one. */
   class SkipJob extends Error {
+    /** @param reason i18n message object { key, params } */
     constructor(reason, status = LAA.C.STATUS.SKIPPED) {
-      super(reason);
+      super(reason && reason.key ? reason.key : String(reason));
       this.name = 'SkipJob';
+      this.reason = reason;
       this.status = status;
     }
   }
@@ -29,16 +32,18 @@
   /** Thrown when LinkedIn reports the daily Easy Apply limit. */
   class LimitReached extends Error {
     constructor() {
-      super('O LinkedIn informou que o limite diário de candidaturas simplificadas foi atingido.');
+      super('limitReached');
       this.name = 'LimitReached';
+      this.reason = M('limitReached');
     }
   }
 
   /** Thrown when a captcha / login / checkpoint needs a human. */
   class NeedsHuman extends Error {
     constructor(reason) {
-      super(reason);
+      super(reason && reason.key ? reason.key : String(reason));
       this.name = 'NeedsHuman';
+      this.reason = reason;
     }
   }
 
