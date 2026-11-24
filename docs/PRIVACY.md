@@ -16,6 +16,7 @@ The extension writes exclusively to `chrome.storage.local`, a private storage ar
 | `profile` | Name, email, phone, city, links. |
 | `answers` | Learned answer bank (question → answer). |
 | `history` | Processed jobs: title, company, status and reason. |
+| `documents` | The cover letter file you chose to attach when a job asks for one (optional, up to 2 MB). |
 | `run`, `control`, `pending`, `pendingAnswer` | Temporary state of the current run. |
 | `log` | The latest 300 activity lines. |
 

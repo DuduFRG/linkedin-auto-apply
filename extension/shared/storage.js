@@ -50,6 +50,8 @@
     [K.PENDING]: null,
     [K.PENDING_ANSWER]: null,
     [K.LOG]: [],
+    // Files the user chose to attach when a job asks for them: { coverLetter: { name, type, size, data(base64) } }
+    [K.DOCUMENTS]: {},
   });
 
   const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(value)));

@@ -148,8 +148,8 @@
     Object.assign(job, EasyApply.jobInfo());
     await Store.patchRun({ current: job, message: M('applyingTo', { title: job.title || jobId }) });
 
-    const data = await Store.getMany([K.SETTINGS, K.PROFILE, K.ANSWERS]);
-    const ctx = { job, settings: data[K.SETTINGS], profile: data[K.PROFILE], answers: data[K.ANSWERS] };
+    const data = await Store.getMany([K.SETTINGS, K.PROFILE, K.ANSWERS, K.DOCUMENTS]);
+    const ctx = { job, settings: data[K.SETTINGS], profile: data[K.PROFILE], answers: data[K.ANSWERS], documents: data[K.DOCUMENTS] };
 
     let result;
     const excludedWord = excludedBy(job, ctx.settings);

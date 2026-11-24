@@ -241,6 +241,20 @@
           <label class="field"><span class="field-label" data-i18n="website"></span><input type="url" data-profile="website" maxlength="200" /></label>
         </form>
 
+        <section class="card" id="coverCard" aria-labelledby="coverTitle">
+          <div class="card-head"><h2 id="coverTitle" data-i18n="coverLetterTitle"></h2></div>
+          <p class="card-sub" data-i18n="coverLetterHelp"></p>
+          <div class="doc-row">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></svg>
+            <span class="doc-name" id="coverName"></span>
+            <button class="link-btn danger" type="button" id="btnCoverRemove" data-i18n="coverLetterRemove" hidden></button>
+          </div>
+          <label class="btn btn-secondary doc-pick">
+            <span id="coverPickLabel" data-i18n="coverLetterChoose"></span>
+            <input type="file" id="coverFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="sr-only" />
+          </label>
+        </section>
+
         <section class="card privacy">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 9.5 4-1.2 7-5 7-9.5V6z" /><path d="m9 12 2 2 4-4" /></svg>
           <div>
