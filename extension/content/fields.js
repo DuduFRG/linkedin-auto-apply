@@ -116,9 +116,26 @@
     return T.cleanLabel(input.getAttribute('aria-label'));
   }
 
+  const FOLLOW_TEXT = /\b(follow|seguir|siga|suivre|folgen)\b/;
+
+  /**
+   * The "Follow <company>" checkbox of the review step. Older markup gives it a
+   * stable id; the newer one uses generated ids, so its text is checked too.
+   */
+  function isFollowCompany(el) {
+    if (SEL.followCompany.some((sel) => el.matches(sel))) return true;
+    if (!el.matches('input[type="checkbox"], [role="checkbox"]')) return false;
+    const text = T.normalize(`${optionLabel(el)} ${el.getAttribute('aria-label') || ''} ${el.name || ''} ${el.id || ''}`);
+    return FOLLOW_TEXT.test(text) || /follow.?company/.test(text);
+  }
+
+  function findFollowCompany(scope) {
+    return deep(scope, 'input[type="checkbox"], [role="checkbox"]').find(isFollowCompany) || null;
+  }
+
   function excluded(el) {
     if (el.closest(SEL.resumeArea)) return true;
-    return SEL.followCompany.some((sel) => el.matches(sel));
+    return isFollowCompany(el);
   }
 
   /** Deep query inside the dialog (also inside nested shadow roots / frames), visible or not. */
@@ -183,7 +200,7 @@
     // Walk outwards from the controls: the closest preceding text block is the question.
     // A sibling that holds its own controls belongs to another field and stops the search.
     let node = group;
-    for (let depth = 0; node && depth < 4; depth += 1) {
+    for (let depth = 0; node && depth < 7; depth += 1) {
       let prev = node.previousElementSibling;
       while (prev) {
         if (prev.matches('input, select, textarea') || prev.querySelector('input, select, textarea, [role="radio"], [role="checkbox"]')) {
@@ -278,6 +295,24 @@
     });
   }
 
+  /** Text referenced by aria-describedby, when it is not a validation message. */
+  function describedBy(el) {
+    const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+    const rootNode = el.getRootNode();
+    const t = T.cleanLabel(
+      ids.map((id) => (rootNode.getElementById ? rootNode.getElementById(id) : null)).filter(Boolean).map((n) => D.text(n)).join(' ')
+    );
+    return t && !ERROR_TEXT.test(t) ? t : '';
+  }
+
+  /**
+   * Last resort for a required question whose text cannot be found: name it by its
+   * options, so it is still asked (and saved) instead of silently blocking the step.
+   */
+  function optionsLabel(options) {
+    return `${M('unlabeledQuestion')}: ${options.slice(0, 6).join(' / ')}`;
+  }
+
   /** Error for a group of controls, also looking at the message right after it. */
   function errorNear(group, controls) {
     const inside = errorFor(group, controls);
@@ -335,6 +370,7 @@
     // The "*" that marks a required question lives in the visible text, not in the aria-label.
     raw = `${raw} ${visible.raw}`;
     if (!label && fs) label = T.cleanLabel(fs.getAttribute('aria-label'));
+    if (!label) label = optionsLabel(options);
     const checked = radios.find(isChecked);
     return build({
       type: 'radio',
@@ -471,7 +507,7 @@
 
       // Checkbox inputs are often visually hidden; their label is what's visible.
       const target = type === 'checkbox' || el.getAttribute('role') === 'checkbox' ? findLabelNode(el, container) || el : el;
-      if (!D.isVisible(target) && !D.isVisible(el)) return;
+      if (!D.isVisible(target) && !D.isVisible(el) && !D.isVisible(el.parentElement)) return;
 
       const field = fromControl(el, container);
       if (field && !field.label) {
@@ -479,6 +515,12 @@
         field.label = q.label;
         field.key = T.questionKey(field.type, field.label);
         if (/\*\s*$/.test(String(q.raw).trim())) field.required = true;
+      }
+      if (field && !field.label) {
+        const described = describedBy(el);
+        if (described) field.label = described;
+        else if (field.required && field.options && field.options.length) field.label = optionsLabel(field.options);
+        field.key = T.questionKey(field.type, field.label);
       }
       if (field && !field.error) field.error = errorNear(field.group || el.parentElement, [el]);
       pushField(field, [el]);
@@ -624,5 +666,5 @@
     };
   }
 
-  LAA.Fields = Object.freeze({ extractFields, fillField, toQuestion, errorTexts, attachFile });
+  LAA.Fields = Object.freeze({ findFollowCompany, isFollowCompany, extractFields, fillField, toQuestion, errorTexts, attachFile });
 })(typeof globalThis !== 'undefined' ? globalThis : this);
