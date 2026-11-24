@@ -23,6 +23,7 @@
     control: {},
     pending: null,
     log: [],
+    documents: {},
     lang: 'en',
     historyFilter: 'all',
     answersQuery: '',
@@ -629,6 +630,46 @@
     });
   }
 
+  // ---------------- Documents (cover letter) ----------------
+
+  const MAX_DOC_BYTES = 2 * 1024 * 1024;
+
+  function renderDocuments() {
+    const doc = (state.documents || {}).coverLetter;
+    const name = $('#coverName');
+    name.textContent = doc ? `${doc.name} · ${Math.max(1, Math.round(doc.size / 1024))} KB` : t('coverLetterNone');
+    name.classList.toggle('is-empty', !doc);
+    $('#btnCoverRemove').hidden = !doc;
+    $('#coverPickLabel').textContent = doc ? t('coverLetterReplace') : t('coverLetterChoose');
+  }
+
+  function bindDocuments() {
+    $('#coverFile').addEventListener('change', (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      if (file.size > MAX_DOC_BYTES) {
+        toast(t('coverLetterTooBig'), 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const data = String(reader.result).split(',')[1] || '';
+        await Store.patch(K.DOCUMENTS, { coverLetter: { name: file.name, type: file.type, size: file.size, data, updatedAt: Date.now() } });
+        toast(t('coverLetterSaved'));
+      };
+      reader.readAsDataURL(file);
+    });
+    $('#btnCoverRemove').addEventListener('click', async () => {
+      await Store.update(K.DOCUMENTS, (docs) => {
+        const next = { ...(docs || {}) };
+        delete next.coverLetter;
+        return next;
+      });
+      toast(t('coverLetterRemoved'));
+    });
+  }
+
   // ---------------- History ----------------
 
   const STATUS_KEY = { applied: 'statusApplied', skipped: 'statusSkipped', failed: 'statusFailed' };
@@ -789,10 +830,12 @@
       renderStatus();
     },
     [K.LOG]: renderLog,
+    [K.DOCUMENTS]: renderDocuments,
   };
 
   function renderAll() {
     renderTerms();
+    renderDocuments();
     renderStatus();
     renderPending();
     renderAnswers();
@@ -809,6 +852,7 @@
     [K.CONTROL]: 'control',
     [K.PENDING]: 'pending',
     [K.LOG]: 'log',
+    [K.DOCUMENTS]: 'documents',
   };
 
   async function init() {
@@ -822,6 +866,7 @@
     bindActions();
     bindTerms();
     bindManualAnswers();
+    bindDocuments();
     Object.values(RENDERERS).forEach((fn) => fn());
 
     let tab = 'run';

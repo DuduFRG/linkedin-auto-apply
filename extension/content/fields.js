@@ -17,6 +17,7 @@
   const M = LAA.I18n.msg;
 
   const SKIP_INPUT_TYPES = new Set(['hidden', 'file', 'submit', 'button', 'reset', 'image', 'search']);
+  const COVER_LETTER = /cover|carta|lettre|anschreiben|motivation|presentaci[oó]n|apresenta[cç][aã]o/i;
   const GROUP_SELECTOR = SEL.formElement.join(', ');
 
   function labelText(node) {
@@ -88,10 +89,31 @@
     return '';
   }
 
+  /**
+   * Visible text of one option (radio / checkbox). Newer LinkedIn markup puts the
+   * QUESTION in the input's aria-label, leaves the <label> empty and writes the
+   * option in a sibling <p>, so the label element and the aria-label are not
+   * trusted on their own: the option is the text of the smallest block around
+   * the input that holds no other option. The browser default value "on" is
+   * never an option name.
+   */
   function optionLabel(input) {
     const node = findLabelNode(input, document);
     const fromLabel = node && node.tagName === 'LABEL' ? labelText(node) : '';
-    return fromLabel || T.cleanLabel(input.getAttribute('aria-label')) || String(input.value || '').trim();
+    if (fromLabel) return fromLabel;
+
+    const isOptionControl = (el) => el !== input && el.matches('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]');
+    let block = input.parentElement;
+    for (let depth = 0; block && depth < 5; depth += 1) {
+      if (Array.from(block.querySelectorAll('input, [role="radio"], [role="checkbox"]')).some(isOptionControl)) break;
+      const t = labelText(block);
+      if (t) return t;
+      block = block.parentElement;
+    }
+
+    const value = String(input.value || '').trim();
+    if (value && value.toLowerCase() !== 'on') return value;
+    return T.cleanLabel(input.getAttribute('aria-label'));
   }
 
   function excluded(el) {
@@ -280,12 +302,38 @@
     return el.tagName === 'INPUT' ? el.checked : el.getAttribute('aria-checked') === 'true';
   }
 
+  /** The block that shows one option (its control plus its text), without any other option inside. */
+  function optionRow(input) {
+    const isOther = (el) => el !== input && el.matches('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]');
+    let row = input.parentElement || input;
+    let node = row;
+    for (let depth = 0; node && depth < 5; depth += 1) {
+      if (Array.from(node.querySelectorAll('input, [role="radio"], [role="checkbox"]')).some(isOther)) break;
+      row = node;
+      if (labelText(node)) break;
+      node = node.parentElement;
+    }
+    return row;
+  }
+
+  /** When every option carries the same aria-label that is not an option name, that label is the question. */
+  function sharedAriaQuestion(controls, options) {
+    const labels = controls.map((c) => T.cleanLabel(c.getAttribute('aria-label')));
+    if (!labels[0] || !labels.every((l) => l === labels[0])) return null;
+    if (options.some((o) => T.normalize(o) === T.normalize(labels[0]))) return null;
+    // Keep the visible text (with its "*") when it says the same thing, for the required flag.
+    return { label: labels[0], raw: labels[0] };
+  }
+
   /** A radio question from its option controls (native inputs or role="radio" widgets). */
   function radioField(radios, container) {
     const options = radios.map(textOfOption);
     const fs = radios[0].closest('fieldset, [role="radiogroup"]');
     const group = fs && radios.every((r) => fs.contains(r)) ? fs : commonAncestor(radios) || radios[0].parentElement;
-    let { label, raw } = questionText(group, options);
+    const visible = questionText(group, options);
+    let { label, raw } = sharedAriaQuestion(radios, options) || visible;
+    // The "*" that marks a required question lives in the visible text, not in the aria-label.
+    raw = `${raw} ${visible.raw}`;
     if (!label && fs) label = T.cleanLabel(fs.getAttribute('aria-label'));
     const checked = radios.find(isChecked);
     return build({
@@ -294,7 +342,7 @@
       required:
         isRequired(radios[0], raw, group) ||
         (group.getAttribute && group.getAttribute('aria-required') === 'true') ||
-        /\*\s*$/.test(String(raw).trim()),
+        /\*/.test(String(raw)),
       options,
       optionEls: radios,
       hasValue: !!checked,
@@ -329,32 +377,91 @@
       pushField(radioField(radios, container), radios);
     });
 
-    // 2. Checkbox groups inside a fieldset / group, and single checkboxes.
-    deep(container, 'fieldset, [role="group"]').forEach((fs) => {
-      if (excluded(fs) || !D.isVisible(fs)) return;
-      const checks = deep(fs, 'input[type="checkbox"], [role="checkbox"]').filter((c) => !handled.has(c) && !excluded(c));
-      if (checks.length < 2) return;
+    // 2. Checkbox groups: inside a fieldset / group, sharing a name, or listed as sibling rows.
+    const checkboxGroup = (checks, groupEl) => {
       const options = checks.map(textOfOption);
-      const { label, raw } = questionText(fs, options);
+      const group = groupEl || commonAncestor(checks) || checks[0].parentElement;
+      const visible = questionText(group, options);
+      const shared = sharedAriaQuestion(checks, options);
+      const label = shared ? shared.label : visible.label;
+      const raw = `${shared ? shared.raw : ''} ${visible.raw}`;
       const checked = checks.filter(isChecked).map(textOfOption);
       pushField(
         build({
           type: 'checkboxes',
           label,
-          required: isRequired(checks[0], raw, fs) || fs.getAttribute('aria-required') === 'true',
+          required:
+            isRequired(checks[0], raw, group) ||
+            (group.getAttribute && group.getAttribute('aria-required') === 'true') ||
+            /\*/.test(String(raw)),
           options,
           optionEls: checks,
           hasValue: checked.length > 0,
           currentValue: checked,
-          error: errorNear(fs, checks),
+          error: errorNear(group, checks),
           el: checks[0],
-          group: fs,
+          group,
         }),
         checks
       );
+    };
+    const freeChecks = () =>
+      deep(container, 'input[type="checkbox"], [role="checkbox"]').filter((c) => !handled.has(c) && !excluded(c) && !c.disabled);
+
+    deep(container, 'fieldset, [role="group"]').forEach((fs) => {
+      if (excluded(fs) || !D.isVisible(fs)) return;
+      const checks = freeChecks().filter((c) => fs.contains(c));
+      if (checks.length >= 2) checkboxGroup(checks, fs);
+    });
+    const byName = new Map();
+    freeChecks().forEach((c) => {
+      if (c.tagName !== 'INPUT' || !c.name) return;
+      if (!byName.has(c.name)) byName.set(c.name, []);
+      byName.get(c.name).push(c);
+    });
+    byName.forEach((checks) => {
+      if (checks.length >= 2) checkboxGroup(checks, null);
+    });
+    // Rows of options under one list: group checkboxes whose option rows share a parent.
+    const byList = new Map();
+    const loose = freeChecks();
+    loose.forEach((c) => {
+      // The list is the closest ancestor of the option row that also holds another loose checkbox.
+      let list = optionRow(c).parentElement;
+      for (let depth = 0; list && depth < 6 && loose.filter((o) => list.contains(o)).length < 2; depth += 1) list = list.parentElement;
+      if (!list || loose.filter((o) => list.contains(o)).length < 2) return;
+      if (!byList.has(list)) byList.set(list, []);
+      byList.get(list).push(c);
+    });
+    byList.forEach((checks, list) => {
+      if (checks.length >= 2) checkboxGroup(checks, list);
     });
 
-    // 3. Everything else: text, number, date, typeahead, select, textarea, single checkbox.
+    // 3. File uploads (cover letter and the like). The resume picker is handled separately.
+    deep(container, 'input[type="file"]').forEach((el) => {
+      if (excluded(el) || el.disabled) return;
+      handled.add(el);
+      const near = questionText(el, []);
+      const own = labelFor(el, container);
+      const block = labelText(el.closest('[data-test-form-element], .fb-dash-form-element') || el.parentElement) || '';
+      const label = own.label || near.label || block || 'Arquivo';
+      const context = `${own.label} ${near.label} ${block} ${el.getAttribute('aria-label') || ''} ${el.getAttribute('name') || ''} ${el.id}`;
+      const field = build({
+        type: 'file',
+        label,
+        required: el.required || el.getAttribute('aria-required') === 'true' || /\*/.test(`${own.raw} ${near.raw}`),
+        options: [],
+        hasValue: !!(el.files && el.files.length),
+        currentValue: el.files && el.files.length ? el.files[0].name : '',
+        error: errorNear(el.parentElement, [el]),
+        el,
+        group: el.parentElement,
+      });
+      field.kind = COVER_LETTER.test(context) ? 'coverLetter' : 'other';
+      fields.push(field);
+    });
+
+    // 4. Everything else: text, number, date, typeahead, select, textarea, single checkbox.
     deep(container, 'input, select, textarea, [role="checkbox"]').forEach((el) => {
       if (handled.has(el) || excluded(el)) return;
       const type = (el.getAttribute('type') || '').toLowerCase();
@@ -482,6 +589,26 @@
     }
   }
 
+  /** Attaches a stored document ({ name, type, data: base64 }) to a file input. */
+  async function attachFile(field, doc) {
+    try {
+      const view = D.viewOf(field.el);
+      const bin = view.atob(doc.data);
+      const bytes = new view.Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      const file = new view.File([bytes], doc.name, { type: doc.type || 'application/octet-stream' });
+      const dt = new view.DataTransfer();
+      dt.items.add(file);
+      field.el.files = dt.files;
+      field.el.dispatchEvent(new view.Event('input', { bubbles: true }));
+      field.el.dispatchEvent(new view.Event('change', { bubbles: true }));
+      await D.pause(800, 1500);
+      return { ok: !!(field.el.files && field.el.files.length) };
+    } catch (err) {
+      return { ok: false, reason: String(err && err.message ? err.message : err) };
+    }
+  }
+
   /** Serializable description of a field, sent to the side panel. */
   function toQuestion(field, extra = {}) {
     return {
@@ -497,5 +624,5 @@
     };
   }
 
-  LAA.Fields = Object.freeze({ extractFields, fillField, toQuestion, errorTexts });
+  LAA.Fields = Object.freeze({ extractFields, fillField, toQuestion, errorTexts, attachFile });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -1504,3 +1504,43 @@ a.hist-title:hover {
   padding-top: 12px;
   border-top: 1px solid var(--rule);
 }
+
+/* ---------- Documents (cover letter) ---------- */
+
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--sheet-2);
+}
+
+.doc-row svg {
+  color: var(--muted);
+}
+
+.doc-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.doc-name.is-empty {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.doc-pick {
+  width: 100%;
+  position: relative;
+}
+
+.doc-pick:focus-within {
+  box-shadow: var(--focus);
+}

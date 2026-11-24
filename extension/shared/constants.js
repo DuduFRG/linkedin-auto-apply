@@ -25,6 +25,7 @@
       PENDING: 'pending',
       PENDING_ANSWER: 'pendingAnswer',
       LOG: 'log',
+      DOCUMENTS: 'documents',
     }),
 
     /** runtime messages handled by the service worker. */

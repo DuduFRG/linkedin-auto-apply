@@ -62,6 +62,25 @@
                 </select>
               </div>
               <div class="q">
+                <p class="t">Are you ready to receive your salary in USDT?*</p>
+                <div>
+                  <div class="w"><div class="r"><div><input id="_r_31_" aria-label="Are you ready to receive your salary in USDT?" tabindex="0" type="radio" name="radio-group-_r_2u_"><label for="_r_31_"></label></div><div><p>Yes</p></div></div></div>
+                  <div class="w"><div class="r"><div><input id="_r_32_" aria-label="Are you ready to receive your salary in USDT?" tabindex="0" type="radio" name="radio-group-_r_2u_"><label for="_r_32_"></label></div><div><p>No</p></div></div></div>
+                </div>
+              </div>
+              <div class="q">
+                <p class="t">Languages fluently speaking*</p>
+                <div>
+                  <div class="w"><div class="r"><div><input id="lang0" type="checkbox"><label for="lang0"></label></div><div><p>English</p></div></div></div>
+                  <div class="w"><div class="r"><div><input id="lang1" type="checkbox"><label for="lang1"></label></div><div><p>Russian</p></div></div></div>
+                  <div class="w"><div class="r"><div><input id="lang2" type="checkbox"><label for="lang2"></label></div><div><p>Spanish</p></div></div></div>
+                </div>
+              </div>
+              <div class="q">
+                <p class="t">Cover letter*</p>
+                <input id="cover" type="file" accept=".pdf" required>
+              </div>
+              <div class="q">
                 <div class="t">Portfolio link</div>
                 <input id="site" type="text">
               </div>`;
@@ -260,6 +279,12 @@
               setError(el, 'Enter a whole number between 0 and 99'); ok = false;
             }
           });
+          const usdt = modal.querySelector('input[name="radio-group-_r_2u_"]');
+          if (usdt && !modal.querySelector('input[name="radio-group-_r_2u_"]:checked')) { setError(usdt, 'Please make a selection'); ok = false; }
+          const lang = modal.querySelector('#lang0');
+          if (lang && !modal.querySelector('[id^="lang"]:checked')) { setError(lang, 'Please make a selection'); ok = false; }
+          const cover = modal.querySelector('#cover');
+          if (cover && !(cover.files && cover.files.length)) { setError(cover, 'Please enter a valid answer'); ok = false; }
           const lic = modal.querySelector('input[name="lic"]');
           if (lic && !modal.querySelector('input[name="lic"]:checked')) { setError(lic, 'Please make a selection'); ok = false; }
           return ok;
@@ -269,6 +294,7 @@
           modal.querySelectorAll('input, select').forEach((el) => {
             if (el.type === 'radio') { if (el.checked) state.values[el.name] = el.id; }
             else if (el.type === 'checkbox') state.values[el.id] = el.checked;
+            else if (el.type === 'file') state.values[el.id] = el.files && el.files[0] ? el.files[0].name : '';
             else state.values[el.id] = el.value;
           });
         }

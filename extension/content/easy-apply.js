@@ -29,7 +29,8 @@
   let lastModal = null;
 
   function getModal() {
-    if (lastModal && lastModal.isConnected && D.isVisible(lastModal) && hasControlsOrButtons(lastModal)) return lastModal;
+    // Reuse it only while it still holds the step's next / review / submit button.
+    if (lastModal && lastModal.isConnected && D.isVisible(lastModal) && D.all(BUTTONS, lastModal).some(isFlowButton)) return lastModal;
     lastModal = findModal();
     return lastModal;
   }
@@ -173,7 +174,12 @@
     if (next) return { button: next, kind: 'next' };
 
     // Text fallback for layouts without the data attributes: the last flow button wins (it is the primary one).
-    const flow = D.all(BUTTONS, modal).filter(isFlowButton);
+    let flow = D.all(BUTTONS, modal).filter(isFlowButton);
+    if (!flow.length) {
+      // The footer can sit outside the element detected as the dialog: look in the dialog around it.
+      const outer = modal.closest('dialog, [role="dialog"], [aria-modal="true"]') || modal.parentElement;
+      if (outer) flow = D.all(BUTTONS, outer).filter(isFlowButton);
+    }
     if (flow.length) {
       const button = flow[flow.length - 1];
       const label = `${D.text(button)} ${button.getAttribute('aria-label') || ''}`;
@@ -259,6 +265,26 @@
   }
 
   /**
+   * File uploads: attach the stored cover letter when the field asks for one.
+   * Any other required upload cannot be answered automatically, so the job is skipped
+   * with a reason that tells the user what to add.
+   */
+  async function handleFile(field, ctx) {
+    if (field.hasValue && !field.error) return;
+    const cover = field.kind === 'coverLetter' && ctx.documents && ctx.documents.coverLetter;
+    if (cover) {
+      const result = await Fields.attachFile(field, cover);
+      if (result.ok) {
+        await Store.log('info', M('coverLetterAttached', { name: cover.name }));
+        return;
+      }
+    }
+    if (!field.required && !field.error) return;
+    if (field.kind === 'coverLetter') throw new SkipJob(M('coverLetterMissing'));
+    throw new SkipJob(M('fileRequired', { label: field.label }));
+  }
+
+  /**
    * Fills every field of the current step. Unknown required fields (and fields
    * flagged with a validation error) are batched into a single question card.
    */
@@ -269,6 +295,10 @@
 
     for (const field of fields) {
       await Control.checkpoint();
+      if (field.type === 'file') {
+        await handleFile(field, ctx);
+        continue;
+      }
       const mustAsk = !!field.error;
       if (field.hasValue && !mustAsk) continue;
 

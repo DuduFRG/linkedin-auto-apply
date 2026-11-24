@@ -105,6 +105,14 @@ function autoResponder(page, responder) {
   return { stop: () => { stopped = true; return loop; }, attempts };
 }
 
+// A tiny "PDF" stored as the user's cover letter (base64 of "%PDF-1.4 test").
+const COVER_DOC = { coverLetter: { name: 'Cover_Letter.pdf', type: 'application/pdf', size: 13, data: 'JVBERi0xLjQgdGVzdA==' } };
+
+const NEW_LAYOUT_ANSWERS = {
+  'choice:are you ready to receive your salary in usdt': { label: 'x', family: 'choice', value: 'No' },
+  'multi:languages fluently speaking': { label: 'x', family: 'multi', value: ['English', 'Spanish'] },
+};
+
 const BASE_SEED = {
   control: { state: 'running' },
   run: { phase: 'applying' },
@@ -125,9 +133,9 @@ const BASE_SEED = {
 async function runJob(page) {
   return page.evaluate(async () => {
     const LAA = window.LAA;
-    const data = await LAA.Store.getMany(['settings', 'profile', 'answers']);
+    const data = await LAA.Store.getMany(['settings', 'profile', 'answers', 'documents']);
     const job = { jobId: '1', ...LAA.EasyApply.jobInfo() };
-    return LAA.EasyApply.run({ job, settings: data.settings, profile: data.profile, answers: data.answers });
+    return LAA.EasyApply.run({ job, settings: data.settings, profile: data.profile, answers: data.answers, documents: data.documents });
   });
 }
 
@@ -294,13 +302,20 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
           ...BASE_SEED.answers,
           'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
           'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+          ...NEW_LAYOUT_ANSWERS,
         },
+        documents: COVER_DOC,
       },
       '#native'
     );
     const result = await runJob(page);
     assert.equal(result.status, 'applied', JSON.stringify(result.reason));
-    assert.equal((await page.evaluate(() => window.__mock)).submitted.english, 'Professional');
+    const submitted = (await page.evaluate(() => window.__mock)).submitted;
+    assert.equal(submitted.english, 'Professional');
+    assert.equal(submitted['radio-group-_r_2u_'], '_r_32_', 'USDT question answered "No" from the option text, not the aria-label');
+    assert.deepEqual([submitted.lang0, submitted.lang1, submitted.lang2], [true, false, true], 'languages ticked by their visible names');
+    assert.equal(submitted.cover, 'Cover_Letter.pdf', 'stored cover letter attached');
+    assert.equal((await page.evaluate(() => window.__asked)).length, 0);
     await page.close();
   });
 
@@ -308,13 +323,15 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     const page = await openPage(
       browser,
       'job.html',
-      { ...BASE_SEED, answers: {}, settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' } },
+      { ...BASE_SEED, answers: {}, documents: COVER_DOC, settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' } },
       '#native'
     );
     const responder = autoResponder(page, (q, attempt) => {
       if (/premiere/i.test(q.label)) return attempt === 1 ? 'cinco' : '5';
       if (/driver/i.test(q.label)) return 'Sim';
       if (/english/i.test(q.label)) return 'professional';
+      if (/usdt/i.test(q.label)) return 'No';
+      if (/languages/i.test(q.label)) return ['English', 'Spanish'];
       return '__unexpected__';
     });
     const result = await runJob(page);
@@ -327,6 +344,11 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     assert.ok(labels.includes("Do you have a valid driver's license?"), labels.join(' | '));
     assert.ok(labels.includes('What is your level of proficiency in English?'), labels.join(' | '));
     assert.ok(!labels.some((l) => /portfolio/i.test(l)), 'optional field not asked');
+    const questions = asked.flatMap((p) => p.questions);
+    assert.deepEqual(questions.find((q) => /usdt/i.test(q.label)).options, ['Yes', 'No']);
+    const langs = questions.find((q) => /languages/i.test(q.label));
+    assert.equal(langs.family, 'multi');
+    assert.deepEqual(langs.options, ['English', 'Russian', 'Spanish'], 'option names, never "on"');
     const retry = asked.flatMap((p) => p.questions).find((q) => /premiere/i.test(q.label) && q.error);
     assert.ok(retry, 'plain-text validation error triggered a re-ask');
 
@@ -338,6 +360,29 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     const store = await page.evaluate(() => window.__data.answers);
     assert.equal(store['text:how many years of experience do you have with adobe premiere'].value, '5');
     assert.equal(store['choice:do you have a valid driver s license'].value, 'Sim');
+    await page.close();
+  });
+
+  await t.test('a required cover letter without a stored file skips the job with a clear reason', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+          ...NEW_LAYOUT_ANSWERS,
+        },
+      },
+      '#native'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'skipped');
+    assert.equal(result.reason.key, 'coverLetterMissing');
+    assert.equal((await page.evaluate(() => window.__mock)).submitted, null);
     await page.close();
   });
 
