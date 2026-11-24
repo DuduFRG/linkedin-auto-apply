@@ -204,7 +204,46 @@
       .filter(Boolean);
   }
 
+  /**
+   * Parses pasted "Question = Answer" lines. Accepts a tab (two columns copied
+   * from a spreadsheet), "=" or "|" as the separator. Returns [{ label, value }].
+   */
+  function parseAnswerLines(text) {
+    return String(text || '')
+      .split(/\r?\n/)
+      .map((line) => {
+        const sep = line.includes('\t') ? '\t' : line.includes('=') ? '=' : line.includes('|') ? '|' : null;
+        if (!sep) return null;
+        const at = line.indexOf(sep);
+        const label = cleanLabel(line.slice(0, at));
+        const value = line.slice(at + 1).trim();
+        return label && value ? { label, value } : null;
+      })
+      .filter(Boolean);
+  }
+
+  /** Answer-bank entry for a question typed by the user (yes/no answers are stored as choices). */
+  function manualAnswerEntry(label, value) {
+    const type = boolish(value) !== null ? 'radio' : 'text';
+    return { key: questionKey(type, label), entry: { label: cleanLabel(label), type, family: familyOf(type), value: String(value).trim(), manual: true } };
+  }
+
+  /** Saved answer for a field, falling back to the same question stored under another field family. */
+  function findSavedAnswer(answers, key, label) {
+    const has = (e) => e && e.value != null && e.value !== '' && !(Array.isArray(e.value) && !e.value.length);
+    if (has(answers[key])) return { key, entry: answers[key] };
+    const n = normalize(label);
+    for (const family of ['text', 'choice', 'checkbox', 'multi']) {
+      const k = `${family}:${n}`;
+      if (k !== key && has(answers[k])) return { key: k, entry: answers[k] };
+    }
+    return null;
+  }
+
   LAA.T = Object.freeze({
+    parseAnswerLines,
+    manualAnswerEntry,
+    findSavedAnswer,
     stripAccents,
     normalize,
     cleanLabel,

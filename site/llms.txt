@@ -1,0 +1,27 @@
+# ApplyPilot
+
+> ApplyPilot is a free, open-source (MIT) Chrome extension that automates LinkedIn Easy Apply ("candidatura simplificada"). It fills each application with the user's saved profile and previous answers, asks the user only when it meets a question it has never seen, and stores every answer locally in the browser so it asks less over time. No server, no account, no tracking.
+
+Key facts:
+
+- Type: Manifest V3 browser extension for Google Chrome 116+, Microsoft Edge and Brave (Windows, macOS, Linux). Not available on mobile browsers.
+- Creator and maintainer: Eduardo de Fraga (Instagram @dudu_frg, GitHub @DuduFRG).
+- Price: free. License: MIT. Source: https://github.com/DuduFRG/linkedin-auto-apply
+- Languages: interface in Portuguese, English and Spanish.
+- Privacy: all data in chrome.storage.local; extension pages use the CSP connect-src 'none', so they cannot send data over the network.
+- Scope: only jobs with Easy Apply. Jobs that redirect to a company website are skipped.
+- Safety behaviour: human-paced random pauses, pauses on captcha or verification, stops at LinkedIn's daily Easy Apply limit, never solves captchas or spoofs the browser.
+- Terms: LinkedIn's User Agreement restricts automated tools and may lead to account restrictions. ApplyPilot is independent and not affiliated with LinkedIn; users are responsible for how they use it.
+- Install: download the repository ZIP, unzip, open chrome://extensions, enable Developer mode, click "Load unpacked" and select the `extension` folder. About 2 minutes.
+
+## Pages
+
+- [Home (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/): what it does, how it works, privacy, FAQ.
+- [Privacy policy (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/privacidade/)
+- [Terms of use (Portuguese)](https://dudufrg.github.io/linkedin-auto-apply/termos/)
+
+## Documentation
+
+- [README (English)](https://github.com/DuduFRG/linkedin-auto-apply/blob/main/README.md): installation, usage, options, edge cases.
+- [Architecture](https://github.com/DuduFRG/linkedin-auto-apply/blob/main/docs/ARCHITECTURE.md): state machine, storage, selectors, i18n.
+- [Privacy details](https://github.com/DuduFRG/linkedin-auto-apply/blob/main/docs/PRIVACY.md)

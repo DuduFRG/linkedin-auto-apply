@@ -37,6 +37,35 @@
         const state = { step: 0, values: {}, submitted: null, discarded: false };
         window.__mock = state;
 
+        // Newer React layout of the questions step: question text in a plain block above the
+        // controls, no <label for>, no fieldset/legend, no LinkedIn classes.
+        const REACT_QUESTIONS = `
+              <div class="q">
+                <div class="t">How many years of experience do you have with Adobe Premiere?*</div>
+                <input id="numeric-years" type="text" required>
+              </div>
+              <div class="q">
+                <div class="t">Do you have a valid driver's license?*</div>
+                <div class="opts">
+                  <div><input type="radio" name="lic" id="lic-y" value="Yes"><label for="lic-y">Yes</label></div>
+                  <div><input type="radio" name="lic" id="lic-n" value="No"><label for="lic-n">No</label></div>
+                </div>
+              </div>
+              <div class="q">
+                <div class="t">What is your level of proficiency in English?*</div>
+                <select id="english" required>
+                  <option value="Select an option">Select an option</option>
+                  <option>None</option>
+                  <option>Conversational</option>
+                  <option>Professional</option>
+                  <option>Native or bilingual</option>
+                </select>
+              </div>
+              <div class="q">
+                <div class="t">Portfolio link</div>
+                <input id="site" type="text">
+              </div>`;
+
         const steps = [
           {
             title: 'Contact info',
@@ -119,9 +148,39 @@
           },
         ];
 
-        function q(sel, root) { return (root || document).querySelector(sel); }
+        // "#shadow" renders the dialog inside a shadow root, like LinkedIn's newer layout.
+        let mount = document.body;
+        if (location.hash === '#iframe') {
+          // Same-origin iframe hosting the dialog, as some LinkedIn layouts do.
+          const frame = document.createElement('iframe');
+          frame.style.cssText = 'position:fixed;inset:20px;width:calc(100% - 40px);height:calc(100% - 40px);border:0;z-index:5';
+          document.body.appendChild(frame);
+          const doc = frame.contentDocument;
+          doc.open();
+          doc.write('<!doctype html><html><head><style>' + document.querySelector('style').textContent + '</style></head><body></body></html>');
+          doc.close();
+          mount = doc.body;
+        } else if (location.hash === '#shadow') {
+          const host = document.createElement('div');
+          host.id = 'interop-outlet';
+          document.body.appendChild(host);
+          mount = host.attachShadow({ mode: 'open' });
+          const style = document.createElement('style');
+          style.textContent = document.querySelector('style').textContent;
+          mount.appendChild(style);
+        }
+        function q(sel, root) { return (root || mount).querySelector(sel); }
+
+        // "#native" mimics LinkedIn's newer React layout: a native <dialog>, no
+        // LinkedIn classes or data attributes, buttons identified only by text.
+        const NATIVE = location.hash === '#native';
 
         function footer(i) {
+          if (NATIVE) {
+            if (i === steps.length - 1) return '<button type="button" class="x1">Enviar candidatura</button>';
+            if (i === steps.length - 2) return '<button type="button" class="x1">Revisar</button>';
+            return '<button type="button" class="x1"><span>Avançar</span></button>';
+          }
           if (i === steps.length - 1) {
             return '<button class="artdeco-button artdeco-button--primary" data-live-test-easy-apply-submit-button aria-label="Submit application">Submit application</button>';
           }
@@ -132,10 +191,23 @@
         }
 
         function render() {
-          const old = q('.jobs-easy-apply-modal');
+          const old = q('[data-mock-modal]');
           if (old) old.remove();
           const s = steps[state.step];
-          const modal = document.createElement('div');
+          const modal = document.createElement(NATIVE ? 'dialog' : 'div');
+          modal.setAttribute('data-mock-modal', '');
+          if (NATIVE) {
+            modal.setAttribute('open', '');
+            modal.style.cssText = 'position:fixed;inset:40px;margin:0;width:auto;height:auto;';
+            modal.innerHTML = `
+            <button type="button" aria-label="Fechar">x</button>
+            <div class="c1">
+              <div class="p1"><span>${s.progress}%</span></div>
+              <h3>${s.title}</h3>
+              ${state.step === 2 ? REACT_QUESTIONS : s.html}
+            </div>
+            <div class="f1">${footer(state.step)}</div>`;
+          } else {
           modal.className = 'artdeco-modal jobs-easy-apply-modal';
           modal.setAttribute('role', 'dialog');
           modal.setAttribute('data-test-modal', '');
@@ -147,7 +219,8 @@
               ${s.html}
             </form></div>
             <footer>${footer(state.step)}</footer>`;
-          document.body.appendChild(modal);
+          }
+          mount.appendChild(modal);
           modal.querySelectorAll('input[name="resume"]').forEach((r) =>
             r.addEventListener('change', () => {
               modal.querySelectorAll('.jobs-document-upload-redesign-card__container').forEach((c) => {
@@ -155,11 +228,21 @@
               });
             })
           );
-          modal.querySelector('footer button').addEventListener('click', onPrimary);
-          modal.querySelector('[data-test-modal-close-btn]').addEventListener('click', onDismiss);
+          modal.querySelector('footer button, .f1 button').addEventListener('click', onPrimary);
+          modal.querySelector('[data-test-modal-close-btn], [aria-label="Fechar"]').addEventListener('click', onDismiss);
         }
 
         function setError(el, message) {
+          if (NATIVE) {
+            // Newer layout: a plain block after the control, no error classes.
+            const box = el.closest('.q');
+            const err = document.createElement('div');
+            err.className = 'm7';
+            err.dataset.err = '1';
+            err.textContent = /^Enter/.test(message) ? 'Introduce un número entero entre 0 y 99' : 'Este campo é obrigatório';
+            box.appendChild(err);
+            return;
+          }
           const group = el.closest('[data-test-form-element]');
           const err = document.createElement('div');
           err.className = 'artdeco-inline-feedback artdeco-inline-feedback--error';
@@ -168,7 +251,7 @@
         }
 
         function validate(modal) {
-          modal.querySelectorAll('.artdeco-inline-feedback--error').forEach((e) => e.remove());
+          modal.querySelectorAll('.artdeco-inline-feedback--error, [data-err]').forEach((e) => e.remove());
           let ok = true;
           modal.querySelectorAll('input[type="text"][required], select[required]').forEach((el) => {
             const empty = el.tagName === 'SELECT' ? el.value === 'Select an option' : !el.value.trim();
@@ -191,7 +274,7 @@
         }
 
         function onPrimary() {
-          const modal = q('.jobs-easy-apply-modal');
+          const modal = q('[data-mock-modal]');
           if (!validate(modal)) return;
           collect(modal);
           if (state.step === steps.length - 1) {
@@ -221,12 +304,12 @@
           dialog.querySelector('[data-test-dialog-secondary-btn]').addEventListener('click', () => {
             state.discarded = true;
             dialog.remove();
-            const modal = q('.jobs-easy-apply-modal');
+            const modal = q('[data-mock-modal]');
             if (modal) modal.remove();
           });
         }
 
-        q('.jobs-apply-button').addEventListener('click', () => setTimeout(render, 300));
+        document.querySelector('.jobs-apply-button').addEventListener('click', () => setTimeout(render, 300));
       })();
     </script>
   </body>

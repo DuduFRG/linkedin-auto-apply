@@ -1,0 +1,11 @@
+{
+  "appName": {
+    "message": "ApplyPilot: Easy Apply assistant"
+  },
+  "appDescription": {
+    "message": "Automates LinkedIn Easy Apply and learns your answers. All your data stays in your browser."
+  },
+  "actionTitle": {
+    "message": "ApplyPilot"
+  }
+}

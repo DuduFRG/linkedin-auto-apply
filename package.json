@@ -1,6 +1,6 @@
 {
   "name": "linkedin-auto-apply",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "private": true,
   "description": "ApplyPilot: Chrome extension that automates LinkedIn Easy Apply and learns your answers locally.",
   "license": "MIT",
@@ -8,7 +8,10 @@
     "test": "node --test \"test/unit/*.test.js\"",
     "test:e2e": "node --test \"test/e2e/*.test.js\"",
     "test:all": "npm test && npm run test:e2e",
-    "icons": "node scripts/generate-icons.js"
+    "icons": "node scripts/generate-icons.js",
+    "site:screens": "node scripts/capture-screenshots.js && python3 scripts/optimize-images.py",
+    "site:assets": "node scripts/build-site-assets.js",
+    "site:serve": "npx --yes serve@14.2.4 site -l 8080"
   },
   "devDependencies": {
     "playwright": "^1.63.0"

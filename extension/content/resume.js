@@ -9,6 +9,7 @@
   const LAA = (root.LAA = root.LAA || {});
   const { D, T, SEL, UI_TEXT, Store, Control } = LAA;
   const { STORAGE: K, SPECIAL_KEYS } = LAA.C;
+  const M = LAA.I18n.msg;
 
   function cards(modal) {
     return D.all(SEL.resumeCard, modal);
@@ -64,10 +65,10 @@
         const idx = names.findIndex((n) => T.normalize(n) === wanted || T.normalize(n).includes(wanted));
         if (idx >= 0) {
           const ok = await select(list[idx]);
-          if (!ok) await Store.log('warn', `Não foi possível confirmar a seleção do currículo "${names[idx]}".`);
+          if (!ok) await Store.log('warn', M('resumeNotConfirmed', { name: names[idx] }));
           return true;
         }
-        error = `Currículo "${target}" não foi encontrado nesta candidatura.`;
+        error = M('resumeNotFound', { name: target });
       }
 
       const reply = await Control.ask({
@@ -76,7 +77,7 @@
         questions: [
           {
             key: SPECIAL_KEYS.RESUME,
-            label: 'Qual currículo salvo no LinkedIn devo usar?',
+            label: M('resumeQuestion'),
             type: 'radio',
             family: 'choice',
             options: names,
@@ -86,15 +87,15 @@
           },
         ],
       });
-      if (!reply || reply.action === 'skip') throw new Control.SkipJob('Vaga pulada pelo usuário.');
+      if (!reply || reply.action === 'skip') throw new Control.SkipJob(M('userSkipped'));
       target = String((reply.answers || {})[SPECIAL_KEYS.RESUME] || '').trim();
       if (target) {
         ctx.settings.resumeName = target;
         await Store.patch(K.SETTINGS, { resumeName: target });
-        await Store.log('info', `Currículo padrão definido: ${target}`);
+        await Store.log('info', M('resumeSet', { name: target }));
       }
     }
-    throw new Control.SkipJob('Currículo não selecionado.', LAA.C.STATUS.FAILED);
+    throw new Control.SkipJob(M('resumeNotSelected'), LAA.C.STATUS.FAILED);
   }
 
   LAA.Resume = Object.freeze({ handle });

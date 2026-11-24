@@ -14,6 +14,7 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..', '..', 'extension');
 const SCRIPTS = [
   'shared/constants.js',
+  'shared/i18n.js',
   'shared/text.js',
   'shared/storage.js',
   'shared/profile.js',
@@ -63,10 +64,10 @@ const CHROME_STUB = () => {
   };
 };
 
-async function openPage(browser, fixture, seed) {
+async function openPage(browser, fixture, seed, hash = '') {
   const page = await browser.newPage();
   await page.addInitScript(CHROME_STUB);
-  await page.goto(`file://${path.join(__dirname, 'fixtures', fixture)}`);
+  await page.goto(`file://${path.join(__dirname, 'fixtures', fixture)}${hash}`);
   for (const file of SCRIPTS) await page.addScriptTag({ path: path.join(ROOT, file) });
   await page.evaluate(async (s) => {
     for (const [k, v] of Object.entries(s)) await window.chrome.storage.local.set({ [k]: v });
@@ -146,7 +147,7 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     const result = await runJob(page);
     await responder.stop();
 
-    assert.equal(result.status, 'applied', result.reason);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
     const mock = await page.evaluate(() => window.__mock);
     assert.equal(mock.submitted.email, 'ana@example.com', 'email select filled from profile');
     assert.equal(mock.submitted.cc, 'br', 'country code matched "+55" -> Brazil (+55)');
@@ -180,9 +181,57 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
       answers: store.answers,
     });
     const result2 = await runJob(page2);
-    assert.equal(result2.status, 'applied', result2.reason);
+    assert.equal(result2.status, 'applied', JSON.stringify(result2.reason));
     assert.equal((await page2.evaluate(() => window.__asked)).length, 0, 'no questions on second run');
     await page2.close();
+  });
+
+  await t.test('dialog rendered inside a shadow root is filled and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#shadow'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted.phone, '11999998888');
+    assert.equal(mock.submitted.resume, 'r2');
+    assert.equal((await page.evaluate(() => window.__asked)).length, 0);
+    await page.close();
+  });
+
+  await t.test('dialog rendered inside a same-origin iframe is filled and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#iframe'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted.phone, '11999998888');
+    assert.equal(mock.submitted['numeric-years'], '5');
+    assert.equal(mock.submitted.english, 'Professional');
+    await page.close();
   });
 
   await t.test('skip from the panel discards the application', async () => {
@@ -214,6 +263,81 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     await page.evaluate(() => window.chrome.storage.local.set({ control: { state: 'idle' } }));
     assert.equal(await pending, 'StopSignal');
     assert.equal(await page.evaluate(() => window.__mock.discarded), true);
+    await page.close();
+  });
+
+  await t.test('search page: "no exact results" banner with similar jobs still collects them', async () => {
+    const page = await openPage(browser, 'search-similar.html', BASE_SEED);
+    const res = await page.evaluate(() => window.LAA.Search.collect());
+    assert.equal(res.empty, false);
+    assert.deepEqual(res.ids.sort(), ['4300000001', '4300000002', '4300000004']);
+    assert.equal(res.appliedOnPage, 1);
+    await page.close();
+  });
+
+  await t.test('search page without ids in the markup: opens each Easy Apply card to read its id', async () => {
+    const page = await openPage(browser, 'search-sdui.html', BASE_SEED);
+    const res = await page.evaluate(() => window.LAA.Search.collect());
+    assert.deepEqual(res.ids, ['4400000001', '4400000002', '4400000005']);
+    assert.equal(res.appliedOnPage, 1);
+    await page.close();
+  });
+
+  await t.test('dialog built as a native <dialog> element is found and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#native'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    assert.equal((await page.evaluate(() => window.__mock)).submitted.english, 'Professional');
+    await page.close();
+  });
+
+  await t.test('newer question layout: asks the unknown questions, re-asks on a plain-text error, saves answers', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      { ...BASE_SEED, answers: {}, settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' } },
+      '#native'
+    );
+    const responder = autoResponder(page, (q, attempt) => {
+      if (/premiere/i.test(q.label)) return attempt === 1 ? 'cinco' : '5';
+      if (/driver/i.test(q.label)) return 'Sim';
+      if (/english/i.test(q.label)) return 'professional';
+      return '__unexpected__';
+    });
+    const result = await runJob(page);
+    await responder.stop();
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+
+    const asked = await page.evaluate(() => window.__asked);
+    const labels = asked.flatMap((p) => p.questions.map((q) => q.label));
+    assert.ok(labels.includes('How many years of experience do you have with Adobe Premiere?'), labels.join(' | '));
+    assert.ok(labels.includes("Do you have a valid driver's license?"), labels.join(' | '));
+    assert.ok(labels.includes('What is your level of proficiency in English?'), labels.join(' | '));
+    assert.ok(!labels.some((l) => /portfolio/i.test(l)), 'optional field not asked');
+    const retry = asked.flatMap((p) => p.questions).find((q) => /premiere/i.test(q.label) && q.error);
+    assert.ok(retry, 'plain-text validation error triggered a re-ask');
+
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted['numeric-years'], '5');
+    assert.equal(mock.submitted.lic, 'lic-y');
+    assert.equal(mock.submitted.english, 'Professional');
+
+    const store = await page.evaluate(() => window.__data.answers);
+    assert.equal(store['text:how many years of experience do you have with adobe premiere'].value, '5');
+    assert.equal(store['choice:do you have a valid driver s license'].value, 'Sim');
     await page.close();
   });
 

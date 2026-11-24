@@ -61,7 +61,14 @@
     ],
 
     // ----- Easy Apply modal -----
-    modal: ['.jobs-easy-apply-modal', 'div[data-test-modal][role="dialog"]', '[role="dialog"].artdeco-modal', '[role="dialog"]'],
+    modal: [
+      '.jobs-easy-apply-modal',
+      'div[data-test-modal][role="dialog"]',
+      '[role="dialog"].artdeco-modal',
+      'dialog[open]',
+      '[role="dialog"]',
+      '[aria-modal="true"]',
+    ],
     modalForm: ['.jobs-easy-apply-content', '.jobs-easy-apply-modal__content', 'form'],
     modalHeader: ['.jobs-easy-apply-content h3', '.jobs-easy-apply-modal__content h3', 'form h3', 'h3'],
     progress: ['progress', '[role="progressbar"]'],

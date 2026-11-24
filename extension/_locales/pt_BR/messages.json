@@ -1,0 +1,11 @@
+{
+  "appName": {
+    "message": "ApplyPilot: assistente de candidaturas simplificadas"
+  },
+  "appDescription": {
+    "message": "Automatiza candidaturas simplificadas no LinkedIn e aprende suas respostas. Seus dados ficam apenas no seu navegador."
+  },
+  "actionTitle": {
+    "message": "ApplyPilot"
+  }
+}

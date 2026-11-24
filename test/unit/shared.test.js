@@ -90,4 +90,23 @@ test('search URL enforces Easy Apply and paginates', () => {
   assert.equal(url.searchParams.get('start'), '50');
   assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/view/4012345678/?refId=x'), '4012345678');
   assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/search/?currentJobId=123&f_AL=true'), '123');
+  assert.equal(Urls.jobIdFromUrl('https://www.linkedin.com/jobs/search-results/?currentJobId=4300000001'), '4300000001');
+  assert.equal(Urls.jobIdFromUrl('urn:li:fsd_jobPosting:4300000002'), '4300000002');
+});
+
+test('pasted answers: "=", "|" and spreadsheet tabs, yes/no stored as choice', () => {
+  const rows = T.parseAnswerLines('Anos de experiência com Premiere? = 7\nVocê tem CNH? | Sim\nPretensão salarial\t6500\nlinha sem separador\n = vazio');
+  assert.deepEqual(rows, [
+    { label: 'Anos de experiência com Premiere?', value: '7' },
+    { label: 'Você tem CNH?', value: 'Sim' },
+    { label: 'Pretensão salarial', value: '6500' },
+  ]);
+  assert.equal(T.manualAnswerEntry('Você tem CNH?', 'Sim').key, 'choice:voce tem cnh');
+  assert.equal(T.manualAnswerEntry('Pretensão salarial', '6500').key, 'text:pretensao salarial');
+});
+
+test('saved answers are found across field families', () => {
+  const answers = { 'text:pretensao salarial': { value: '6500' } };
+  assert.equal(T.findSavedAnswer(answers, 'choice:pretensao salarial', 'Pretensão salarial').entry.value, '6500');
+  assert.equal(T.findSavedAnswer(answers, 'text:outra', 'Outra'), null);
 });

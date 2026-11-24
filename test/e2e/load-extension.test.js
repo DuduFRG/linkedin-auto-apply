@@ -33,13 +33,34 @@ test('extension loads and the service worker answers messages', { timeout: 60000
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`chrome-extension://${extensionId}/sidepanel/sidepanel.html`);
   await page.waitForSelector('#btnPrimary');
-  assert.equal(await page.textContent('#btnPrimaryLabel'), 'Iniciar');
+  // "auto" follows the browser language (English in this headless browser).
+  await page.waitForFunction(() => document.querySelector('#btnPrimaryLabel').textContent !== '');
+  assert.equal(await page.textContent('#btnPrimaryLabel'), 'Start');
+
+  // Switching language re-renders the whole panel instantly.
+  await page.selectOption('#languageSelect', 'pt');
+  await page.waitForFunction(() => document.querySelector('#btnPrimaryLabel').textContent === 'Iniciar');
+  assert.equal(await page.textContent('[data-tab="history"]'), 'Histórico');
+  await page.selectOption('#languageSelect', 'es');
+  await page.waitForFunction(() => document.querySelector('[data-tab="run"]').textContent === 'Búsqueda');
+  assert.equal(await page.getAttribute('html', 'lang'), 'es-ES');
 
   // Settings typed in the panel are persisted locally.
   await page.fill('[data-setting="keyword"]', 'Videomaker');
   await page.waitForTimeout(700);
   const stored = await page.evaluate(() => chrome.storage.local.get('settings'));
   assert.equal(stored.settings.keyword, 'Videomaker');
+
+  // Starting is refused until the terms of use are accepted.
+  const refused = await page.evaluate(() => chrome.runtime.sendMessage({ type: 'START' }));
+  assert.equal(refused.ok, false);
+  assert.equal(refused.error.key, 'termsRequired');
+  assert.equal(await page.isVisible('#termsCard'), true);
+  await page.check('#termsCheck');
+  await page.click('#btnAcceptTerms');
+  await page.waitForFunction(() => document.querySelector('#termsCard').hidden);
+  const accepted = await page.evaluate(() => chrome.storage.local.get('settings'));
+  assert.ok(accepted.settings.termsAcceptedAt > 0);
 
   // Round trip to the service worker (PAUSE is harmless with no active run).
   const reply = await page.evaluate(() => chrome.runtime.sendMessage({ type: 'PAUSE' }));

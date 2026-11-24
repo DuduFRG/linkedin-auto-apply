@@ -1,143 +1,173 @@
-# ApplyPilot · LinkedIn Easy Apply
+<div align="center">
 
-Extensão para Google Chrome que se candidata automaticamente a vagas com **Candidatura simplificada (Easy Apply)** no LinkedIn. Ela usa um currículo já salvo na sua conta, preenche o que já sabe sobre você e **só pergunta quando encontra uma pergunta nova**. Cada resposta fica salva localmente, então a cada execução ela pergunta menos.
+<img src="extension/icons/icon128.png" width="72" height="72" alt="ApplyPilot logo">
 
-> **Privacidade:** perfil, respostas e histórico ficam apenas no seu navegador (`chrome.storage.local`). O repositório não contém nenhum dado pessoal e a extensão não envia nada para servidores. Detalhes em [docs/PRIVACY.md](docs/PRIVACY.md).
+# ApplyPilot
+
+**An open-source Chrome extension that handles LinkedIn Easy Apply for you, and learns your answers so it asks less every time.**
+
+[Website](https://dudufrg.github.io/linkedin-auto-apply/) · [Install](#installation) · [How it works](#how-it-works) · [Privacy](docs/PRIVACY.md) · [Terms](docs/TERMS.md) · [Architecture](docs/ARCHITECTURE.md)
+
+![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-1f4bc4)
+![No tracking](https://img.shields.io/badge/data-100%25%20local-17804a)
+![Languages](https://img.shields.io/badge/UI-EN%20%C2%B7%20PT%20%C2%B7%20ES-555)
+![License: MIT](https://img.shields.io/badge/license-MIT-555)
+
+<img src="docs/images/panel.png" width="760" alt="ApplyPilot side panel showing a pending question, run status and statistics">
+
+</div>
 
 ---
 
-## Como funciona
+ApplyPilot searches for jobs with **Easy Apply**, opens each application, fills in what it already knows about you (contact details, the resume you chose, answers you gave before) and **pauses only when it meets a question it has never seen**. You answer once in the side panel; the answer is saved locally and reused on every future application.
+
+- **Learns as you go.** The first run asks a handful of questions. After a few runs it rarely asks anything.
+- **Private by design.** Your profile, answers and history never leave your browser. No server, no account, no analytics.
+- **Careful, not aggressive.** Human-paced, pauses for captchas and verifications, stops at LinkedIn's daily limit.
+- **Three languages.** The interface is available in English, Portuguese and Spanish.
+
+> [!IMPORTANT]
+> ApplyPilot is an independent open-source project and is not affiliated with, endorsed by or sponsored by LinkedIn Corporation. Read [Responsible use](#responsible-use) before running it.
+
+## How it works
 
 ```
-Você define cargo, local e currículo
+You set job title, location and resume
         │
         ▼
-Busca no LinkedIn com o filtro Easy Apply (f_AL=true)
+LinkedIn search with the Easy Apply filter (f_AL=true)
         │
         ▼
-Para cada vaga nova ──► abre a candidatura simplificada
-        │                    │
-        │                    ├─ Campo já conhecido? preenche (perfil ou banco de respostas)
-        │                    ├─ Campo desconhecido? pausa e pergunta no painel lateral
-        │                    │      └─ salva a resposta para as próximas vagas
-        │                    ├─ Etapa do currículo? seleciona o currículo escolhido
-        │                    └─ Revisão? desmarca "seguir empresa" e envia
+For each new job ──► open the Easy Apply form
+        │                 │
+        │                 ├─ Known field?    fill it (profile or answer bank)
+        │                 ├─ Unknown field?  pause and ask in the side panel
+        │                 │      └─ save the answer for next time
+        │                 ├─ Resume step?    select the resume you chose
+        │                 └─ Review step?    untick "follow company", submit
         ▼
-Intervalo aleatório ──► próxima vaga ──► próxima página de resultados
+Random pause ──► next job ──► next results page
 ```
 
-## Instalação
+## Installation
 
-Requisitos: Google Chrome 116 ou superior (ou Edge/Brave baseados em Chromium).
+Requirements: Google Chrome 116 or newer (Edge and Brave also work).
 
-1. Clone o repositório:
+1. Clone or download this repository:
    ```bash
    git clone https://github.com/DuduFRG/linkedin-auto-apply.git
    ```
-2. Abra `chrome://extensions` no Chrome.
-3. Ative o **Modo do desenvolvedor** (canto superior direito).
-4. Clique em **Carregar sem compactação** e selecione a pasta `extension/` do projeto.
-5. Fixe o ícone do ApplyPilot na barra de ferramentas.
+2. Open `chrome://extensions`.
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked** and select the `extension/` folder.
+5. Pin the ApplyPilot icon to the toolbar.
+6. Open the panel and accept the [terms of use](docs/TERMS.md) (shown once, on first run).
 
-Para atualizar depois de um `git pull`, clique em **Recarregar** no card da extensão em `chrome://extensions`. Seus dados são mantidos.
+To update after `git pull`, click **Reload** on the extension card. Your data is kept.
 
-## Uso
+## Usage
 
-1. Faça login no LinkedIn normalmente.
-2. Clique no ícone do ApplyPilot para abrir o **painel lateral**.
-3. Aba **Perfil**: preencha seus dados (usados apenas quando o LinkedIn não preenche sozinho).
-4. Aba **Busca**:
-   - **Cargo ou palavra-chave**: ex. `Videomaker`, `Fotógrafo`, `Editor de Vídeo`.
-   - **Localização**: ex. `São Paulo, Brasil` ou `Brasil`.
-   - **Currículo salvo no LinkedIn**: nome do arquivo, ou deixe vazio. Na primeira candidatura o ApplyPilot lista os currículos da sua conta e você escolhe; a escolha fica salva.
-   - **Meta por execução**: quantas candidaturas enviar antes de parar.
-5. Clique em **Iniciar**. Uma aba do LinkedIn é aberta e controlada pela extensão.
-6. Quando surgir uma pergunta nova, o painel mostra um card laranja (e uma notificação). Responda e clique em **Responder e continuar**, ou **Pular vaga**.
+1. Sign in to LinkedIn as usual.
+2. Click the ApplyPilot icon to open the **side panel**. Pick your language with the globe selector (Automatic follows the browser).
+3. **Profile** tab: fill in your details. They are only used when LinkedIn does not prefill a field.
+4. **Search** tab:
+   - **Job title or keyword**, e.g. `Video Editor`, `Photographer`.
+   - **Location**, e.g. `Lisbon, Portugal`.
+   - **Resume saved on LinkedIn**: a file name, or leave it empty. On the first application ApplyPilot lists the resumes on your account and you pick one.
+   - **Goal per run**: how many applications to send before stopping.
+5. Click **Start**. A LinkedIn tab opens and is driven by the extension.
+6. When a new question appears, the panel shows an orange card and Chrome shows a notification. Answer and click **Answer and continue**, or **Skip job**.
 
-Você pode **Pausar**, **Retomar** ou **Parar** a qualquer momento. Pode continuar usando o navegador em outras abas; apenas a aba da automação é controlada.
+You can **Pause**, **Resume** or **Stop** at any time and keep browsing in other tabs. Only the automation tab is controlled.
 
-### Opções avançadas
+### Advanced options
 
-| Opção | Padrão | Descrição |
+| Option | Default | Description |
 | --- | --- | --- |
-| Intervalo mín./máx. | 15 s / 40 s | Espera aleatória entre candidaturas enviadas. |
-| Ignorar vagas com estas palavras | vazio | Pula vagas cujo título ou empresa contenham as palavras (ex.: `estágio, sênior`). |
-| Somente vagas remotas | não | Adiciona o filtro de trabalho remoto à busca. |
-| Pedir confirmação antes de enviar | não | Pausa na tela de revisão até você clicar em **Enviar candidatura**. Recomendado nas primeiras execuções. |
-| Perguntar também campos opcionais | não | Por padrão só campos obrigatórios desconhecidos geram perguntas. |
-| Seguir as empresas | não | Mantém ou desmarca a caixa "Seguir empresa" do LinkedIn. |
+| Min. / max. pause | 15 s / 40 s | Random wait between submitted applications. |
+| Skip jobs containing these words | empty | Skips jobs whose title or company contains any word (e.g. `internship, senior`). |
+| Remote jobs only | off | Adds LinkedIn's remote filter to the search. |
+| Ask for confirmation before sending | off | Stops at the review step until you click **Send application**. Recommended for your first runs. |
+| Also ask about optional fields | off | By default only unknown required fields trigger a question. |
+| Follow companies when applying | off | Keeps or unticks LinkedIn's "Follow company" box. |
 
-### Banco de respostas
+### Answer bank
 
-A aba **Respostas** lista tudo o que o ApplyPilot aprendeu. Você pode buscar, editar, apagar, **Exportar** (backup `.json`) e **Importar** (para outro computador ou navegador). Veja o formato em [examples/answers.example.json](examples/answers.example.json).
+The **Answers** tab lists everything ApplyPilot has learned. Search, edit, delete, **Export** a JSON backup or **Import** it on another machine. See the format in [examples/answers.example.json](examples/answers.example.json).
 
-Como as respostas são reconhecidas:
+How questions are recognised:
 
-- O rótulo da pergunta é normalizado (minúsculas, sem acentos e sem pontuação). A mesma pergunta em vagas diferentes reutiliza a mesma resposta.
-- Perguntas de escolha (lista ou botões) compartilham a resposta, que é casada com as opções disponíveis: `Sim` serve para `Yes`, `+55` serve para `Brasil (+55)`.
-- Para perguntas parecidas, mas não idênticas, o painel sugere a resposta mais próxima já salva. Você confirma com um clique.
-- Se o LinkedIn rejeitar uma resposta (ex.: "digite um número inteiro"), a pergunta volta para você com a mensagem de erro, e a nova resposta substitui a antiga.
+- Labels are normalised (case, accents and punctuation removed), so the same question on different jobs reuses the same answer.
+- Choice questions (dropdowns and radio buttons) share answers and are matched against the available options: `Yes` fits `Sim`, `+55` fits `Brazil (+55)`.
+- For similar but not identical questions, the panel suggests the closest saved answer. You confirm it.
+- If LinkedIn rejects an answer (e.g. "enter a whole number"), the question comes back with the error message and the new answer replaces the old one.
 
-## Tratamento de situações
+## Edge cases
 
-| Situação | Comportamento |
+| Situation | Behaviour |
 | --- | --- |
-| Vaga já candidatada | Pulada e registrada no histórico. |
-| Vaga sem Easy Apply ou encerrada | Pulada. |
-| Pergunta nova | Pausa e pergunta no painel. |
-| Resposta rejeitada pelo LinkedIn | Pergunta de novo com o erro (até 2 vezes), depois descarta a candidatura. |
-| Campo impossível de preencher (ex.: upload de carta) | Descarta a candidatura e registra como falha. |
-| Formulário diferente do esperado | Seletores com várias alternativas; se ainda assim falhar, descarta e segue. |
-| Captcha, login ou verificação | Pausa, notifica e aguarda você resolver na aba e clicar em **Retomar**. |
-| Limite diário do LinkedIn | Encerra a execução. |
-| Várias falhas seguidas | Pausa para você verificar. |
-| Aba fechada ou navegador reiniciado | Execução encerrada com segurança. |
+| Already applied | Skipped and recorded in history. |
+| No Easy Apply, or job closed | Skipped. |
+| New question | Pauses and asks in the panel. |
+| Answer rejected by LinkedIn | Asks again with the error (up to 2 times), then discards the application. |
+| Field that cannot be filled (e.g. cover letter upload) | Discards the application and records a failure. |
+| Unexpected form layout | Multiple fallback selectors; if it still fails, discards and moves on. |
+| Captcha, sign-in or checkpoint | Pauses, notifies you and waits until you solve it and click **Resume**. |
+| LinkedIn daily limit | Ends the run. |
+| Several failures in a row | Pauses so you can check. |
+| Tab closed or browser restarted | Run ends safely. |
 
-## Uso responsável
+## Responsible use
 
-- Automação de navegação pode violar os [Termos de Uso do LinkedIn](https://www.linkedin.com/legal/user-agreement). Use por sua conta e risco.
-- O ApplyPilot **não** tenta contornar proteções: não resolve captchas, não altera fingerprint, não usa APIs internas e não faz requisições paralelas. Ele age na página como uma pessoa, com pausas aleatórias, e para quando o LinkedIn pede verificação.
-- Mantenha metas modestas (ex.: 20 a 40 por dia) e revise o histórico. Candidatar-se a vagas sem aderência prejudica sua reputação com recrutadores.
+Automating a website may conflict with its terms. LinkedIn's [User Agreement](https://www.linkedin.com/legal/user-agreement) (section 8.2) prohibits using bots or other automated methods to access the services, and LinkedIn may restrict accounts that use them. **You are responsible for how you use this software and for any consequences to your account.**
 
-## Estrutura do projeto
+ApplyPilot is built to stay on the conservative side:
+
+- It never solves captchas, spoofs fingerprints, calls private APIs or runs parallel sessions.
+- It acts on the page like a person, with random pauses, and stops whenever LinkedIn asks for a verification or reports the daily limit.
+- It sends nothing anywhere except the forms you would otherwise submit by hand.
+
+Keep goals modest (for example 20 to 40 per day), review your history, and only apply to jobs that genuinely fit you.
+
+## Privacy
+
+All data lives in `chrome.storage.local` inside your Chrome profile. The extension pages are locked by Content Security Policy to `connect-src 'none'`, so they cannot make network requests at all. Nothing personal is in this repository. Details in [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## Project structure
 
 ```
 linkedin-auto-apply/
-├── extension/                  ← pasta carregada no Chrome
+├── extension/                  ← the folder you load in Chrome
 │   ├── manifest.json           Manifest V3
-│   ├── background/
-│   │   └── service-worker.js   Iniciar/pausar/parar, aba da automação, badge, notificações
-│   ├── content/                Executa dentro do LinkedIn
-│   │   ├── selectors.js        Todos os seletores e textos do LinkedIn (EN/PT/ES)
-│   │   ├── dom.js              Esperas, pausas humanas, preenchimento de inputs
-│   │   ├── control.js          Pausa/parada e perguntas ao usuário
-│   │   ├── fields.js           Leitura e preenchimento de campos do formulário
-│   │   ├── resume.js           Seleção do currículo salvo
-│   │   ├── easy-apply.js       Máquina de estados de uma candidatura
-│   │   ├── search.js           Coleta de vagas na página de resultados
-│   │   └── runner.js           Orquestra busca → vaga → próxima vaga
-│   ├── shared/                 Usado por todas as partes (e pelos testes)
-│   │   ├── constants.js
-│   │   ├── storage.js          Única camada de persistência (chrome.storage.local)
-│   │   ├── text.js             Normalização, chaves de pergunta, matching de opções
-│   │   ├── profile.js          Mapeia rótulos para dados do perfil
-│   │   └── search-url.js       URLs de busca com filtro Easy Apply
-│   ├── sidepanel/              Interface (HTML/CSS/JS puro, sem dependências)
+│   ├── _locales/               Store name and description (en, pt_BR, es)
+│   ├── background/             Start/pause/stop, automation tab, badge, notifications
+│   ├── content/                Runs inside LinkedIn
+│   │   ├── selectors.js        Every LinkedIn selector and UI string (EN/PT/ES/FR/DE)
+│   │   ├── dom.js              Waits, human-like pauses, input setters
+│   │   ├── control.js          Pause/stop checkpoints and questions to the user
+│   │   ├── fields.js           Reads and fills form fields
+│   │   ├── resume.js           Selects the saved resume
+│   │   ├── easy-apply.js       State machine for one application
+│   │   ├── search.js           Collects job ids from results
+│   │   └── runner.js           Orchestrates search → job → next job
+│   ├── shared/                 Used everywhere (and by tests)
+│   │   ├── i18n.js             PT / EN / ES strings
+│   │   ├── storage.js          The only persistence layer
+│   │   ├── text.js             Normalisation, question keys, option matching
+│   │   ├── profile.js          Maps labels to profile fields
+│   │   └── search-url.js       Easy Apply search URLs
+│   ├── sidepanel/              UI in plain HTML/CSS/JS, no dependencies
 │   └── icons/
-├── docs/
-│   ├── ARCHITECTURE.md         Fluxo, estados e como manter os seletores
-│   └── PRIVACY.md              Onde ficam os dados e como apagá-los
-├── examples/
-│   └── answers.example.json    Exemplo fictício do formato de backup
-├── scripts/generate-icons.js
-└── test/
-    ├── unit/                   Testes das funções puras (node:test)
-    └── e2e/                    Testes no Chromium real com página simulada do Easy Apply
+├── site/                       Landing page (GitHub Pages)
+├── docs/                       Architecture, privacy, screenshots
+├── examples/                   Fictional backup file
+├── scripts/                    Icon and image generators
+└── test/                       Unit tests and Playwright end-to-end tests
 ```
 
-Sem etapa de build: os arquivos em `extension/` são exatamente o que o Chrome executa.
+There is no build step: the files in `extension/` are exactly what Chrome runs.
 
-## Desenvolvimento
+## Development
 
 ```bash
 npm install
@@ -151,11 +181,25 @@ npx playwright install chromium
 npm run test:all
 ```
 
-- `npm test`: testes unitários (normalização, matching de opções, perfil, URLs).
-- `npm run test:e2e`: carrega a extensão no Chromium e executa o motor contra uma página que simula o Easy Apply (perguntas, erro de validação, currículo, envio, descarte, parada).
+- `npm test` runs unit tests (normalisation, option matching, profile mapping, URLs, translations).
+- `npm run test:e2e` loads the real extension in Chromium and runs the engine against a mock Easy Apply page (questions, validation errors, resume selection, submission, discard, stop).
 
-Quando o LinkedIn mudar o layout, ajuste `extension/content/selectors.js`. Veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+When LinkedIn changes its markup, update `extension/content/selectors.js`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Licença
+## Contributing
 
-MIT. Projeto independente, sem afiliação com o LinkedIn.
+Issues and pull requests are welcome, especially new selectors when LinkedIn changes its layout, and translations. Please run `npm run test:all` before opening a PR.
+
+If ApplyPilot saved you time, a star helps other people find it.
+
+## Author
+
+Created and maintained by **Eduardo de Fraga** · Instagram [@dudu_frg](https://www.instagram.com/dudu_frg/) · GitHub [@DuduFRG](https://github.com/DuduFRG).
+
+## Legal
+
+- [Terms of use](docs/TERMS.md) ([Portuguese, canonical](https://dudufrg.github.io/linkedin-auto-apply/termos/))
+- [Privacy policy](docs/PRIVACY.md) ([Portuguese, canonical](https://dudufrg.github.io/linkedin-auto-apply/privacidade/))
+- [MIT License](LICENSE)
+
+LinkedIn is a trademark of LinkedIn Corporation. This project is independent and not affiliated with, endorsed by or sponsored by LinkedIn.

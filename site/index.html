@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="pt-BR" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ApplyPilot: automatize candidaturas simplificadas no LinkedIn</title>
+    <meta name="description" content="Extensão gratuita e open source que preenche candidaturas simplificadas do LinkedIn e aprende suas respostas. Cada vaga pergunta menos. Dados 100% no seu navegador. Baixe grátis." />
+    <link rel="canonical" href="https://dudufrg.github.io/linkedin-auto-apply/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0f2a4a" />
+    <meta name="color-scheme" content="light" />
+    <meta name="author" content="Eduardo de Fraga" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="ApplyPilot" />
+    <meta property="og:title" content="ApplyPilot: cada candidatura pergunta menos que a anterior" />
+    <meta property="og:description" content="Extensão gratuita e open source que preenche candidaturas simplificadas no LinkedIn e aprende suas respostas. 100% local. Baixe grátis." />
+    <meta property="og:url" content="https://dudufrg.github.io/linkedin-auto-apply/" />
+    <meta property="og:image" content="https://dudufrg.github.io/linkedin-auto-apply/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ApplyPilot: gráfico mostrando as perguntas por candidatura caindo de 8 para 0." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ApplyPilot: cada candidatura pergunta menos que a anterior" />
+    <meta name="twitter:description" content="Extensão gratuita e open source para Chrome. Aprende suas respostas e mantém seus dados no navegador. Baixe grátis." />
+    <meta name="twitter:image" content="https://dudufrg.github.io/linkedin-auto-apply/og-image.png" />
+    <meta name="twitter:image:alt" content="ApplyPilot: gráfico mostrando as perguntas por candidatura caindo de 8 para 0." />
+
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
+
+    <link rel="preload" href="assets/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/public-sans.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <script src="assets/js/main.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://dudufrg.github.io/linkedin-auto-apply/#website",
+            "url": "https://dudufrg.github.io/linkedin-auto-apply/",
+            "name": "ApplyPilot",
+            "inLanguage": "pt-BR",
+            "publisher": { "@id": "https://dudufrg.github.io/linkedin-auto-apply/#author" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://dudufrg.github.io/linkedin-auto-apply/#author",
+            "name": "Eduardo de Fraga",
+            "url": "https://www.instagram.com/dudu_frg/",
+            "sameAs": ["https://www.instagram.com/dudu_frg/", "https://github.com/DuduFRG"]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://dudufrg.github.io/linkedin-auto-apply/#app",
+            "name": "ApplyPilot",
+            "alternateName": "LinkedIn Auto Apply",
+            "description": "Extensão gratuita e open source para Chrome que preenche candidaturas simplificadas (Easy Apply) do LinkedIn com respostas já conhecidas e pergunta ao usuário apenas o que é novo. Todos os dados ficam no navegador.",
+            "url": "https://dudufrg.github.io/linkedin-auto-apply/",
+            "downloadUrl": "https://github.com/DuduFRG/linkedin-auto-apply/archive/refs/heads/main.zip",
+            "applicationCategory": "BrowserApplication",
+            "applicationSubCategory": "Job search assistant",
+            "operatingSystem": "Windows, macOS, Linux (Google Chrome 116+, Microsoft Edge, Brave)",
+            "softwareVersion": "1.2.0",
+            "license": "https://opensource.org/licenses/MIT",
+            "isAccessibleForFree": true,
+            "availableLanguage": ["pt-BR", "en", "es"],
+            "inLanguage": "pt-BR",
+            "image": "https://dudufrg.github.io/linkedin-auto-apply/og-image.png",
+            "screenshot": "https://dudufrg.github.io/linkedin-auto-apply/assets/img/painel-800.webp",
+            "featureList": [
+              "Preenche candidaturas simplificadas com dados do perfil e respostas salvas",
+              "Pergunta apenas o que é novo e lembra a resposta",
+              "Seleciona o currículo salvo escolhido",
+              "Pausa diante de captcha, verificação ou limite diário",
+              "Dados armazenados somente no navegador",
+              "Interface em português, inglês e espanhol"
+            ],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+            "author": { "@id": "https://dudufrg.github.io/linkedin-auto-apply/#author" }
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "ApplyPilot",
+            "codeRepository": "https://github.com/DuduFRG/linkedin-auto-apply",
+            "programmingLanguage": "JavaScript",
+            "license": "https://opensource.org/licenses/MIT",
+            "author": { "@id": "https://dudufrg.github.io/linkedin-auto-apply/#author" },
+            "targetProduct": { "@id": "https://dudufrg.github.io/linkedin-auto-apply/#app" }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://dudufrg.github.io/linkedin-auto-apply/#faq",
+            "inLanguage": "pt-BR",
+            "mainEntity": [
+              { "@type": "Question", "name": "O ApplyPilot é gratuito?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. É gratuito e de código aberto sob licença MIT. Não há plano pago, assinatura nem cadastro." } },
+              { "@type": "Question", "name": "Usar a extensão pode afetar minha conta no LinkedIn?", "acceptedAnswer": { "@type": "Answer", "text": "Pode. O Contrato do Usuário do LinkedIn proíbe ferramentas automatizadas e a plataforma pode restringir contas. O ApplyPilot reduz riscos com ritmo humano, pausas e parada diante de verificações, mas não os elimina." } },
+              { "@type": "Question", "name": "Onde ficam meus dados?", "acceptedAnswer": { "@type": "Answer", "text": "Somente no seu navegador, em chrome.storage.local. A extensão não tem servidor, não exige conta e suas páginas são bloqueadas para qualquer requisição de rede." } },
+              { "@type": "Question", "name": "Funciona com qualquer vaga?", "acceptedAnswer": { "@type": "Answer", "text": "Funciona apenas com vagas que oferecem candidatura simplificada (Easy Apply). Vagas que redirecionam para o site da empresa são puladas automaticamente." } },
+              { "@type": "Question", "name": "Preciso saber programar para instalar?", "acceptedAnswer": { "@type": "Answer", "text": "Não. A instalação leva cerca de dois minutos: baixar o arquivo, descompactar e carregar a pasta da extensão no Chrome." } },
+              { "@type": "Question", "name": "Quais navegadores e sistemas são compatíveis?", "acceptedAnswer": { "@type": "Answer", "text": "Google Chrome 116 ou superior, Microsoft Edge, Brave e outros navegadores baseados em Chromium, no Windows, macOS e Linux. Navegadores de celular não aceitam esse tipo de extensão." } },
+              { "@type": "Question", "name": "Quem criou o ApplyPilot?", "acceptedAnswer": { "@type": "Answer", "text": "Eduardo de Fraga, que mantém o projeto como software livre no GitHub. Ele também responde pelo Instagram @dudu_frg." } }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <!--
+      THESIS: A página é o relatório anual da sua busca de emprego. Recusa a landing de SaaS com cards de recursos e números soltos: aqui cada afirmação vira gráfico, tabela ou diagrama numerado, com fonte e nota.
+      OWN-WORLD: capa em campo azul-petróleo #0F2A4A com o grid de 12 colunas visível, miolo em papel frio #F4F6F9 e folhas brancas, verde #1E7A5C para respondido ou aprendido, âmbar #9A5512 para o que precisa de você. Schibsted Grotesk em títulos e números, Public Sans no texto, filetes de 1 e 2 px, cantos quase retos.
+      STORY: o visitante entende que a ferramenta aprende e pergunta cada vez menos, vê a prova no Gráfico 1, confere privacidade e riscos como num balanço e baixa a extensão.
+      FIRST VIEWPORT: capa petróleo. Colunas 1 a 6: título grande, texto de apoio, botão verde Baixar a extensão e linha de fatos. Colunas 8 a 12: Gráfico 1, oito barras de perguntas por candidatura caindo de 8 para 0, desenhadas da esquerda para a direita, a mais recente em verde.
+      FORM: Relatório Anual, posição 7 da lista, seed 65c4742a.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></symbol>
+      <symbol id="i-loop" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" /></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" /></symbol>
+      <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5h.01" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" /></symbol>
+      <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1e7a5c" /><path d="M9 22 16 9l7 13" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 18h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" /></symbol>
+    </svg>
+
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./" aria-label="ApplyPilot, página inicial">
+          <svg aria-hidden="true"><use href="#i-logo" /></svg>
+          ApplyPilot
+        </a>
+        <nav id="site-nav" class="nav" aria-label="Principal">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#painel">Painel</a>
+          <a href="#privacidade">Privacidade</a>
+          <a href="#riscos">Riscos</a>
+          <a href="#perguntas">Perguntas</a>
+        </nav>
+        <div class="header-actions">
+          <a class="gh-link" href="https://github.com/DuduFRG/linkedin-auto-apply" rel="noopener" aria-label="Repositório no GitHub">
+            <svg aria-hidden="true"><use href="#i-github" /></svg>
+          </a>
+          <a class="btn btn-primary btn-sm" href="obrigado/">Baixar a extensão</a>
+          <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Abrir menu">
+            <svg class="icon" aria-hidden="true"><use href="#i-menu" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="conteudo">
+      <!-- ================= Capa ================= -->
+      <section class="cover on-petrol" aria-labelledby="titulo">
+        <div class="cover-grid-lines" aria-hidden="true">
+          <div class="container">
+            <div class="grid-12"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="container grid-12 cover-inner">
+          <div class="cover-copy">
+            <h1 id="titulo" class="display">Cada candidatura pergunta menos que a anterior.</h1>
+            <p class="lead">
+              O ApplyPilot é uma extensão gratuita para Chrome que preenche as candidaturas simplificadas do LinkedIn com o que você já respondeu. Só o que é novo chega até você, uma única vez, e fica guardado no seu navegador.
+            </p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="obrigado/">
+                <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>
+                Baixar a extensão
+              </a>
+              <a class="btn btn-line" href="https://github.com/DuduFRG/linkedin-auto-apply" rel="noopener">
+                <svg class="icon icon-fill" aria-hidden="true"><use href="#i-github" /></svg>
+                Ver o código
+              </a>
+            </div>
+            <ul class="facts-inline" aria-label="Resumo">
+              <li>Gratuita e open source</li>
+              <li>Pronta em 2 minutos</li>
+              <li>Português, inglês e espanhol</li>
+            </ul>
+          </div>
+
+          <figure class="cover-chart" aria-labelledby="g1-title">
+            <figcaption class="fig-label" id="g1-title"><b>Gráfico 1</b><span>Perguntas feitas a você, por candidatura</span></figcaption>
+            <div class="chart" role="img" aria-label="Perguntas por candidatura: 8 na primeira, 5 na segunda, 3 na terceira, 2 na quarta, 1 na quinta e na sexta, 0 na sétima e na oitava.">
+              <div class="chart-gridlines" aria-hidden="true">
+                <span style="bottom: 0"></span><span style="bottom: 25%"></span><span style="bottom: 50%"></span><span style="bottom: 75%"></span><span style="bottom: 100%"></span>
+              </div>
+              <div class="chart-axis" aria-hidden="true">
+                <span style="bottom: 0">0</span><span style="bottom: 25%">2</span><span style="bottom: 50%">4</span><span style="bottom: 75%">6</span><span style="bottom: 100%">8</span>
+              </div>
+              <div class="chart-col" style="--v: 8; --i: 0" aria-hidden="true"><span class="bar"></span><span class="val">8</span><span class="x">1ª</span></div>
+              <div class="chart-col" style="--v: 5; --i: 1" aria-hidden="true"><span class="bar"></span><span class="val">5</span><span class="x">2ª</span></div>
+              <div class="chart-col" style="--v: 3; --i: 2" aria-hidden="true"><span class="bar"></span><span class="val">3</span><span class="x">3ª</span></div>
+              <div class="chart-col" style="--v: 2; --i: 3" aria-hidden="true"><span class="bar"></span><span class="val">2</span><span class="x">4ª</span></div>
+              <div class="chart-col" style="--v: 1; --i: 4" aria-hidden="true"><span class="bar"></span><span class="val">1</span><span class="x">5ª</span></div>
+              <div class="chart-col" style="--v: 1; --i: 5" aria-hidden="true"><span class="bar"></span><span class="val">1</span><span class="x">6ª</span></div>
+              <div class="chart-col" style="--v: 0; --i: 6" aria-hidden="true"><span class="bar"></span><span class="val">0</span><span class="x">7ª</span></div>
+              <div class="chart-col is-current" style="--v: 0; --i: 7" aria-hidden="true"><span class="bar"></span><span class="val">0</span><span class="x">8ª</span></div>
+              <p class="chart-callout callout-first" aria-hidden="true">Na primeira vaga, tudo é novo.</p>
+              <p class="chart-callout callout-last" aria-hidden="true">Depois, você só acompanha.</p>
+            </div>
+            <p class="fig-note">Exemplo ilustrativo. A quantidade real varia conforme as perguntas de cada empresa.</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ================= O que acontece num formulário ================= -->
+      <section class="report report-sheet" aria-labelledby="formulario-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="formulario-titulo" class="h2">Dentro de cada formulário, uma única pergunta para você.</h2>
+            <p class="lead">Na terceira candidatura de uma busca, o ApplyPilot já conhece quase tudo. Ele preenche, confere e só para quando aparece algo inédito.</p>
+          </div>
+          <div class="report-body">
+            <div class="fig-label" id="t1"><b>Tabela 1</b><span>Origem de cada resposta numa candidatura</span></div>
+            <table class="data-table" aria-labelledby="t1">
+              <thead>
+                <tr><th scope="col">Campo do formulário</th><th scope="col">Resposta enviada</th><th scope="col">Origem</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">E-mail</th><td class="answer">ana.lima@exemplo.com</td><td><span class="source" data-s="profile">Seu perfil</span></td></tr>
+                <tr><th scope="row">Celular</th><td class="answer num">(11) 99999-0000</td><td><span class="source" data-s="profile">Seu perfil</span></td></tr>
+                <tr><th scope="row">Currículo</th><td class="answer">Curriculo_Ana_2026.pdf</td><td><span class="source" data-s="memory">Escolhido uma vez</span></td></tr>
+                <tr><th scope="row">Anos de experiência na área</th><td class="answer num">6</td><td><span class="source" data-s="memory">Memória</span></td></tr>
+                <tr><th scope="row">Nível de inglês</th><td class="answer">Avançado</td><td><span class="source" data-s="memory">Memória</span></td></tr>
+                <tr><th scope="row">Pretensão salarial</th><td class="answer num">R$ 7.000</td><td><span class="source" data-s="memory">Memória</span></td></tr>
+                <tr><th scope="row">Disponibilidade para viagens?</th><td class="answer">Sim</td><td><span class="source" data-s="new">Nova, respondida agora</span></td></tr>
+              </tbody>
+              <tfoot>
+                <tr><td colspan="3">Perguntas feitas a você: 1 de 7 campos</td></tr>
+              </tfoot>
+            </table>
+            <p class="fig-note">Dados fictícios. Campos já preenchidos pelo LinkedIn são mantidos como estão.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Como funciona ================= -->
+      <section id="como-funciona" class="report" aria-labelledby="fluxo-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="fluxo-titulo" class="h2">Como funciona, do filtro ao envio.</h2>
+            <p class="lead">Você define cargo, cidade e currículo. A extensão percorre as vagas com candidatura simplificada, uma por vez, no ritmo de uma pessoa.</p>
+          </div>
+          <div class="report-body">
+            <div class="fig-label"><b>Diagrama 1</b><span>O caminho de cada vaga</span></div>
+            <ol class="flow">
+              <li class="flow-step">
+                <h3>Busca filtrada</h3>
+                <p>Só vagas com candidatura simplificada, na cidade e no período que você escolheu.</p>
+              </li>
+              <li class="flow-step">
+                <h3>Leitura do formulário</h3>
+                <p>Cada campo é identificado, mesmo com acentos, idiomas ou formatos diferentes.</p>
+              </li>
+              <li class="flow-step">
+                <h3>Resposta</h3>
+                <ul class="flow-branch">
+                  <li><span><b>Conhece:</b> preenche sozinho.</span></li>
+                  <li><span><b>Não conhece:</b> pergunta a você e guarda.</span></li>
+                </ul>
+              </li>
+              <li class="flow-step is-gate">
+                <h3>Envio</h3>
+                <p>Na revisão, envia a candidatura e registra no histórico.</p>
+                <span class="gate-note">Opcional: aprovar cada envio antes</span>
+              </li>
+            </ol>
+            <p class="flow-loop"><svg class="icon" aria-hidden="true"><use href="#i-loop" /></svg>Depois de um intervalo aleatório, segue para a próxima vaga.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Painel ================= -->
+      <section id="painel" class="report report-sheet" aria-labelledby="painel-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="painel-titulo" class="h2">Você acompanha tudo pelo painel lateral.</h2>
+            <p class="lead">Ele fica ao lado do LinkedIn, enquanto você continua usando o navegador em outras abas.</p>
+          </div>
+          <div class="report-body">
+            <div class="fig-label"><b>Figura 1</b><span>Painel do ApplyPilot durante uma busca</span></div>
+            <div class="panel-figure" style="margin-top: 28px">
+              <figure class="shot">
+                <picture>
+                  <source type="image/avif" srcset="assets/img/painel-400.avif 400w, assets/img/painel-800.avif 800w" sizes="(max-width: 880px) 360px, 300px" />
+                  <source type="image/webp" srcset="assets/img/painel-400.webp 400w, assets/img/painel-800.webp 800w" sizes="(max-width: 880px) 360px, 300px" />
+                  <img src="assets/img/painel-800.webp" width="400" height="980" loading="lazy" decoding="async" alt="Painel lateral do ApplyPilot com três perguntas novas de uma vaga, o status Aguardando você e as estatísticas da busca." />
+                </picture>
+                <span class="pin" style="top: 10%; right: -13px" aria-hidden="true">1</span>
+                <span class="pin" style="top: 81%; right: -13px" aria-hidden="true">2</span>
+                <span class="pin" style="top: 91.5%; right: -13px" aria-hidden="true">3</span>
+                <span class="pin" style="top: 3.4%; right: -13px" aria-hidden="true">4</span>
+              </figure>
+              <ol class="pins-list">
+                <li><h3>Pergunta nova</h3><p>Aparece só quando algo é inédito. Você responde uma vez e escolhe se quer lembrar.</p></li>
+                <li><h3>Andamento</h3><p>Vaga atual, candidaturas enviadas, puladas e com falha, com a meta da sessão.</p></li>
+                <li><h3>Controle</h3><p>Pausar, retomar ou parar a qualquer momento. As abas guardam respostas, perfil e histórico.</p></li>
+                <li><h3>Seu idioma</h3><p>Português, inglês ou espanhol, com troca instantânea.</p></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Privacidade ================= -->
+      <section id="privacidade" class="report" aria-labelledby="privacidade-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="privacidade-titulo" class="h2">Seus dados não saem do seu computador.</h2>
+            <p class="lead">Não existe conta, servidor ou painel do outro lado. O código é aberto e pode ser auditado linha por linha. <a href="privacidade/">Política de privacidade</a></p>
+          </div>
+          <div class="report-body">
+            <div class="fig-label" id="t2"><b>Tabela 2</b><span>Balanço de dados</span></div>
+            <table class="data-table ledger" aria-labelledby="t2">
+              <thead>
+                <tr><th scope="col">Informação</th><th scope="col">Onde fica</th><th scope="col">Sai do navegador?</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">Perfil e contato</th><td><code>chrome.storage.local</code></td><td class="no">Não</td></tr>
+                <tr><th scope="row">Banco de respostas</th><td><code>chrome.storage.local</code></td><td class="no">Não</td></tr>
+                <tr><th scope="row">Histórico de vagas</th><td><code>chrome.storage.local</code></td><td class="no">Não</td></tr>
+                <tr><th scope="row">Requisições de rede da extensão</th><td>Bloqueadas por <code>connect-src 'none'</code></td><td class="no">Nenhuma</td></tr>
+                <tr><th scope="row">Candidatura enviada</th><td>Formulário do próprio LinkedIn</td><td>Só o que você enviaria à mão</td></tr>
+              </tbody>
+            </table>
+            <p class="fig-note">Sem cookies, sem Google Analytics, sem pixels. Isso vale para a extensão e para este site.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Riscos ================= -->
+      <section id="riscos" class="report report-sheet" aria-labelledby="riscos-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="riscos-titulo" class="h2">Fatores de risco, sem letras miúdas.</h2>
+            <p class="lead">Antes de instalar, vale saber exatamente o que a ferramenta faz e o que não faz. Detalhes nos <a href="termos/">termos de uso</a>.</p>
+          </div>
+          <div class="report-body">
+            <ul class="risks">
+              <li>
+                <h3>Regras do LinkedIn</h3>
+                <p>O <a href="https://www.linkedin.com/legal/user-agreement" rel="noopener nofollow">Contrato do Usuário do LinkedIn</a> restringe ferramentas automatizadas, e contas podem ser limitadas. A decisão de uso é sua.</p>
+              </li>
+              <li>
+                <h3>O que ela nunca faz</h3>
+                <p>Não resolve captchas, não disfarça o navegador, não usa APIs internas e não abre várias sessões ao mesmo tempo.</p>
+              </li>
+              <li>
+                <h3>Quando ela para</h3>
+                <p>Diante de verificação ou login, pausa e avisa. Ao atingir o limite diário informado pela plataforma, encerra.</p>
+              </li>
+              <li>
+                <h3>Responsabilidade pelas respostas</h3>
+                <p>Tudo o que é enviado vem de você. Revise o banco de respostas e, no começo, ative a confirmação antes de cada envio.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Carta do criador ================= -->
+      <section class="report" aria-labelledby="carta-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="carta-titulo" class="h2">Carta do criador.</h2>
+          </div>
+          <div class="report-body">
+            <div class="letter">
+              <p>Procurar emprego já exige muito. Digitar as mesmas respostas em cada formulário não deveria ser parte disso.</p>
+              <p>Criei o ApplyPilot para cuidar da repetição e deixar com você o que importa: escolher bem onde se candidatar e se preparar para a conversa que vem depois. Fiz questão de que tudo ficasse no seu navegador, sem conta e sem servidor, porque informação de carreira é pessoal.</p>
+              <p>O código é aberto. Se encontrar um problema ou tiver uma ideia, me procure.</p>
+              <div class="signature">
+                <span class="mono" aria-hidden="true">EF</span>
+                <div>
+                  <strong>Eduardo de Fraga</strong>
+                  <a href="https://www.instagram.com/dudu_frg/" rel="noopener me"><svg class="icon" aria-hidden="true"><use href="#i-instagram" /></svg>@dudu_frg no Instagram</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Perguntas ================= -->
+      <section id="perguntas" class="report report-sheet" aria-labelledby="faq-titulo">
+        <div class="container grid-12 report-inner">
+          <div class="report-head">
+            <h2 id="faq-titulo" class="h2">Perguntas frequentes.</h2>
+            <p class="lead">Outra dúvida? <a href="https://github.com/DuduFRG/linkedin-auto-apply/issues" rel="noopener">Abra uma issue no GitHub</a>.</p>
+          </div>
+          <div class="report-body faq">
+            <details>
+              <summary>O ApplyPilot é gratuito?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Sim. É gratuito e de código aberto sob licença MIT. Não há plano pago, assinatura nem cadastro.</p></div>
+            </details>
+            <details>
+              <summary>Usar a extensão pode afetar minha conta no LinkedIn?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Pode. O Contrato do Usuário do LinkedIn proíbe ferramentas automatizadas e a plataforma pode restringir contas. O ApplyPilot reduz riscos com ritmo humano e pausas, mas não os elimina. Comece com metas pequenas e com “Pedir confirmação antes de enviar” ativado.</p></div>
+            </details>
+            <details>
+              <summary>Onde ficam meus dados?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Somente no seu navegador, em <code>chrome.storage.local</code>. Veja a <a href="privacidade/">política de privacidade</a>.</p></div>
+            </details>
+            <details>
+              <summary>Funciona com qualquer vaga?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Apenas com vagas que oferecem candidatura simplificada. Vagas que redirecionam para o site da empresa são puladas.</p></div>
+            </details>
+            <details>
+              <summary>Preciso saber programar para instalar?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Não. São cerca de dois minutos: baixar, descompactar e carregar a pasta no Chrome. O passo a passo aparece logo após o download.</p></div>
+            </details>
+            <details>
+              <summary>Quais navegadores e sistemas são compatíveis?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Chrome 116 ou superior, Edge, Brave e outros baseados em Chromium, no Windows, macOS e Linux. Navegadores de celular não aceitam esse tipo de extensão.</p></div>
+            </details>
+            <details>
+              <summary>O que acontece se o LinkedIn mudar o layout?<svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg></summary>
+              <div class="answer"><p>Os seletores ficam centralizados em um único arquivo, o que torna as correções rápidas. Acompanhe o repositório para receber melhorias.</p></div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Contracapa ================= -->
+      <section class="back-cover on-petrol" aria-labelledby="final-titulo">
+        <div class="container grid-12">
+          <h2 id="final-titulo" class="h2">Responda uma vez. <em>O resto fica com ele.</em></h2>
+          <div class="back-cover-side">
+            <p>As vagas publicadas hoje recebem os primeiros currículos hoje. Instale agora e deixe a parte repetitiva por conta do ApplyPilot.</p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="obrigado/">
+                <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>
+                Baixar a extensão
+              </a>
+              <a class="btn btn-line" href="https://github.com/DuduFRG/linkedin-auto-apply" rel="noopener">
+                <svg class="icon" aria-hidden="true"><use href="#i-star" /></svg>
+                Dar uma estrela
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="grid-12 footer-top">
+          <div class="footer-brand">
+            <a class="brand" href="./" aria-label="ApplyPilot, página inicial">
+              <svg aria-hidden="true"><use href="#i-logo" /></svg>
+              ApplyPilot
+            </a>
+            <p>Extensão gratuita e open source criada por Eduardo de Fraga. Projeto independente, sem afiliação com o LinkedIn.</p>
+          </div>
+          <nav class="footer-col" aria-label="Projeto">
+            <h2>Projeto</h2>
+            <ul>
+              <li><a href="obrigado/">Baixar e instalar</a></li>
+              <li><a href="https://github.com/DuduFRG/linkedin-auto-apply" rel="noopener">Código no GitHub</a></li>
+              <li><a href="https://github.com/DuduFRG/linkedin-auto-apply/issues" rel="noopener">Reportar um problema</a></li>
+            </ul>
+          </nav>
+          <nav class="footer-col" aria-label="Legal">
+            <h2>Legal</h2>
+            <ul>
+              <li><a href="termos/">Termos de uso</a></li>
+              <li><a href="privacidade/">Política de privacidade</a></li>
+              <li><a href="https://github.com/DuduFRG/linkedin-auto-apply/blob/main/LICENSE" rel="noopener">Licença MIT</a></li>
+            </ul>
+          </nav>
+          <nav class="footer-col" aria-label="Contato">
+            <h2>Contato</h2>
+            <ul>
+              <li><a href="https://www.instagram.com/dudu_frg/" rel="noopener me">Instagram @dudu_frg</a></li>
+              <li><a href="https://github.com/DuduFRG" rel="noopener">GitHub @DuduFRG</a></li>
+            </ul>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span>© <span data-year>2026</span> Eduardo de Fraga. Código sob licença MIT.</span>
+          <span>LinkedIn é marca registrada da LinkedIn Corporation, sem relação com este projeto.</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -13,27 +13,109 @@
   const { D, T, SEL, UI_TEXT, BLOCKERS, Store, Control, Fields, Resume, Profile } = LAA;
   const { STORAGE: K, STATUS, LIMITS } = LAA.C;
   const { SkipJob, LimitReached } = Control;
+  const M = LAA.I18n.msg;
 
   // ---------------- Page inspection ----------------
 
+  /** A button that moves the application forward (next, review or submit), in any supported language. */
+  const BUTTONS = 'button, [role="button"], input[type="submit"]';
+
+  function isFlowButton(b) {
+    const label = `${D.text(b)} ${b.getAttribute('aria-label') || ''}`;
+    return T.includesAny(label, UI_TEXT.next) || T.includesAny(label, UI_TEXT.review) || T.includesAny(label, UI_TEXT.submit);
+  }
+
+  // The dialog found last time: re-renders between steps can briefly detach it.
+  let lastModal = null;
+
   function getModal() {
+    if (lastModal && lastModal.isConnected && D.isVisible(lastModal) && hasControlsOrButtons(lastModal)) return lastModal;
+    lastModal = findModal();
+    return lastModal;
+  }
+
+  function hasControlsOrButtons(m) {
+    return hasControls(m) || D.all(BUTTONS, m).some(isFlowButton);
+  }
+
+  function findModal() {
     const candidates = D.all(SEL.modal);
     return (
       candidates.find((m) => m.matches('.jobs-easy-apply-modal')) ||
       candidates.find((m) => D.first(SEL.modalForm, m) && D.first(['footer button', 'button.artdeco-button--primary'], m)) ||
+      // Newer layouts: any dialog with form controls and a next / review / submit button.
+      candidates.find((m) => hasControls(m) && D.all(BUTTONS, m).some(isFlowButton)) ||
+      // Dialog content loaded as an iframe document: its body is the form.
+      D.roots(document)
+        .filter((r) => r !== document && r.nodeType === 9 && r.body)
+        .map((doc) => doc.body)
+        .find((body) => D.isVisible(body.ownerDocument.defaultView.frameElement || body) && hasControls(body) && D.all(BUTTONS, body).some(isFlowButton)) ||
+      containerOfFlowButton() ||
       null
     );
   }
 
+  /**
+   * Last resort for unknown markup: start from a visible next / review / submit
+   * button and climb to the element that holds it together with the form
+   * fields. Only an ancestor that is a dialog, a modal or a fixed overlay
+   * qualifies, so page-level controls (like the global search box) are never
+   * mistaken for the application form.
+   */
+  function containerOfFlowButton() {
+    const buttons = D.all(BUTTONS, document).filter(isFlowButton);
+    for (const button of buttons) {
+      let node = button.parentElement || (button.getRootNode() && button.getRootNode().host);
+      let withControls = null;
+      for (let depth = 0; node && depth < 25; depth += 1) {
+        const isDoc = node === node.ownerDocument.body || node === node.ownerDocument.documentElement;
+        if (isDoc) break;
+        if (!withControls && hasControls(node)) withControls = node;
+        const fixed = D.viewOf(node).getComputedStyle(node).position === 'fixed';
+        if (withControls && (node.matches('dialog, [role="dialog"], [aria-modal="true"]') || fixed)) return node;
+        node = node.parentElement || (node.getRootNode() && node.getRootNode().host) || null;
+      }
+    }
+    return null;
+  }
+
+  function hasControls(scope) {
+    return !!D.first(['input:not([type="hidden"])', 'select', 'textarea', 'fieldset'], scope, { visible: false });
+  }
+
+  /** What the page looked like when the dialog could not be found, so selectors can be fixed. */
+  function dialogDiagnostic() {
+    const all = D.roots(document);
+    return {
+      dialogs: D.all('[role="dialog"], dialog, .artdeco-modal', document).length,
+      frames: document.querySelectorAll('iframe').length,
+      frameDocs: all.filter((r) => r !== document && r.nodeType === 9).length,
+      shadows: all.filter((r) => r.nodeType === 11).length,
+      center: D.describeCenter(),
+    };
+  }
+
   function jobInfo() {
-    const title = D.text(D.first(SEL.jobTitle));
-    const company = D.text(D.first(SEL.company));
+    let title = D.text(D.first(SEL.jobTitle));
+    let company = D.text(D.first(SEL.company));
+    // Fallback: the tab title reads "Job title | Company | LinkedIn".
+    const parts = String(document.title || '')
+      .replace(/^\(\d+\)\s*/, '')
+      .split(' | ')
+      .map((p) => p.trim())
+      .filter((p) => p && !/^linkedin$/i.test(p));
+    if (!title || title.length > 140) title = parts[0] || '';
+    if (!company) company = parts[1] || '';
     return { title, company };
   }
 
   function findEasyApplyButton() {
-    const buttons = D.all(SEL.easyApplyButton);
-    return buttons.find((b) => T.includesAny(`${D.text(b)} ${b.getAttribute('aria-label') || ''}`, UI_TEXT.easyApply)) || null;
+    const matches = (b) => T.includesAny(`${D.text(b)} ${b.getAttribute('aria-label') || ''}`, UI_TEXT.easyApply);
+    const known = D.all(SEL.easyApplyButton).find(matches);
+    if (known) return known;
+    // Newer layouts render the action as a plain button or link; never pick one inside the results list.
+    const scope = document.querySelector('main') || document.body;
+    return D.all('button, a[role="button"], a[href*="/apply"]', scope).find((b) => matches(b) && D.text(b).length < 60 && !b.closest('li')) || null;
   }
 
   /**
@@ -67,9 +149,7 @@
   }
 
   function errorsIn(modal) {
-    return D.all(SEL.fieldError, modal)
-      .map((e) => D.text(e))
-      .filter(Boolean);
+    return Fields.errorTexts(modal);
   }
 
   function stepSignature(modal) {
@@ -92,6 +172,16 @@
     const next = D.first(SEL.nextButton, modal);
     if (next) return { button: next, kind: 'next' };
 
+    // Text fallback for layouts without the data attributes: the last flow button wins (it is the primary one).
+    const flow = D.all(BUTTONS, modal).filter(isFlowButton);
+    if (flow.length) {
+      const button = flow[flow.length - 1];
+      const label = `${D.text(button)} ${button.getAttribute('aria-label') || ''}`;
+      if (T.includesAny(label, UI_TEXT.submit)) return { button, kind: 'submit' };
+      if (T.includesAny(label, UI_TEXT.review)) return { button, kind: 'review' };
+      return { button, kind: 'next' };
+    }
+
     const primary = D.first(SEL.footerPrimary, modal);
     if (!primary) return null;
     const label = `${D.text(primary)} ${primary.getAttribute('aria-label') || ''}`;
@@ -110,7 +200,7 @@
   async function discard() {
     const modal = getModal();
     if (!modal) return;
-    const close = D.first(SEL.dismiss, modal);
+    const close = D.first(SEL.dismiss, modal) || D.first(SEL.dismiss);
     if (!close) return;
     D.click(close);
     await D.pause(500, 900);
@@ -150,8 +240,8 @@
       const value = Profile.profileValue(ctx.profile, profileField);
       if (value) return { value, source: 'profile', profileField };
     }
-    const saved = ctx.answers[field.key];
-    if (saved && saved.value != null && saved.value !== '') return { value: saved.value, source: 'answers', profileField };
+    const saved = T.findSavedAnswer(ctx.answers, field.key, field.label);
+    if (saved) return { value: saved.entry.value, source: 'answers', savedKey: saved.key, profileField };
     return { value: null, source: null, profileField };
   }
 
@@ -191,10 +281,10 @@
       if (!mustAsk && known.value != null) {
         const result = await Fields.fillField(field, known.value);
         if (result.ok) {
-          if (known.source === 'answers') used.push(field.key);
+          if (known.source === 'answers') used.push(known.savedKey || field.key);
           continue;
         }
-        field.error = result.reason || 'A resposta salva não serviu para este campo.';
+        field.error = result.reason || M('savedAnswerInvalid');
       }
       unknown.push({ field, known });
     }
@@ -217,9 +307,9 @@
       });
     });
 
-    await Store.log('info', `Pergunta nova (${questions.length}) em "${ctx.job.title || 'vaga'}". Aguardando sua resposta.`);
+    await Store.log('info', M('newQuestions', { count: questions.length, job: ctx.job.title || M('jobFallback', { id: ctx.job.jobId }) }));
     const reply = await Control.ask({ kind: 'questions', job: ctx.job, questions });
-    if (!reply || reply.action === 'skip') throw new SkipJob('Vaga pulada pelo usuário.');
+    if (!reply || reply.action === 'skip') throw new SkipJob(M('userSkipped'));
 
     const answers = reply.answers || {};
     const rememberMap = reply.remember || {};
@@ -227,7 +317,7 @@
       const value = answers[field.key];
       if (value == null || value === '' || (Array.isArray(value) && !value.length)) continue;
       const result = await Fields.fillField(field, value);
-      if (!result.ok) await Store.log('warn', `Não consegui preencher "${field.label}": ${result.reason || 'valor rejeitado'}.`);
+      if (!result.ok) await Store.log('warn', M('fillFailed', { label: field.label, reason: result.reason || M('valueRejected') }));
       if (rememberMap[field.key] !== false) await remember(field, value, known.profileField, ctx);
     }
   }
@@ -236,45 +326,52 @@
 
   async function openModal() {
     const ready = await D.waitFor(() => findEasyApplyButton() || alreadyApplied() || closedForApplications() || D.first(SEL.jobTitle), {
-      timeout: 15000,
+      timeout: 10000,
     });
-    if (!ready) throw new SkipJob('A página da vaga não carregou.', STATUS.FAILED);
+    if (!ready) throw new SkipJob(M('jobNotLoaded'), STATUS.FAILED);
     // Give the top card a moment to render its apply button.
-    await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 6000 });
+    await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 5000 });
 
-    if (alreadyApplied()) throw new SkipJob('Você já se candidatou a esta vaga.');
-    if (closedForApplications()) throw new SkipJob('A vaga não aceita mais candidaturas.');
+    if (alreadyApplied()) throw new SkipJob(M('alreadyApplied'));
+    if (closedForApplications()) throw new SkipJob(M('jobClosed'));
 
     const button = findEasyApplyButton();
-    if (!button) throw new SkipJob('Vaga sem candidatura simplificada.');
-    if (D.isDisabled(button)) throw new SkipJob('Botão de candidatura desativado.');
+    if (!button) throw new SkipJob(M('noEasyApply'));
+    if (D.isDisabled(button)) throw new SkipJob(M('buttonDisabled'));
 
-    await D.pause(700, 1500);
+    await D.pause(400, 900);
     D.click(button);
 
     const modal = await D.waitFor(getModal, { timeout: 12000 });
     if (!modal) {
       if (hitDailyLimit()) throw new LimitReached();
-      throw new SkipJob('O formulário de candidatura não abriu.', STATUS.FAILED);
+      await Store.log('warn', M('dialogDiagnostic', dialogDiagnostic()));
+      throw new SkipJob(M('formNotOpened'), STATUS.FAILED);
     }
-    await D.pause(600, 1200);
+    await D.pause(400, 800);
     return modal;
   }
 
   async function submit(action, ctx) {
     if (ctx.settings.confirmBeforeSubmit) {
       const reply = await Control.ask({ kind: 'confirm', job: ctx.job });
-      if (!reply || reply.action !== 'submit') throw new SkipJob('Envio cancelado pelo usuário.');
+      if (!reply || reply.action !== 'submit') throw new SkipJob(M('submitCancelled'));
     }
     await Control.checkpoint();
     D.click(action.button);
 
+    let goneSince = 0;
     const outcome = await D.waitFor(
       () => {
         if (successVisible()) return 'success';
         if (hitDailyLimit()) return 'limit';
         const modal = getModal();
-        if (!modal) return 'success';
+        if (!modal) {
+          // Count it as sent only once the dialog has stayed gone for a moment.
+          goneSince = goneSince || Date.now();
+          return Date.now() - goneSince > 1500 ? 'success' : null;
+        }
+        goneSince = 0;
         if (errorsIn(modal).length) return 'error';
         return null;
       },
@@ -284,10 +381,10 @@
     if (outcome === 'limit') throw new LimitReached();
     if (outcome === 'success') {
       await closeSuccessDialog();
-      return { status: STATUS.APPLIED, reason: 'Candidatura enviada.' };
+      return { status: STATUS.APPLIED, reason: M('applied') };
     }
     if (outcome === 'error') return { retry: true };
-    throw new SkipJob('Não foi possível confirmar o envio da candidatura.', STATUS.FAILED);
+    throw new SkipJob(M('submitUnconfirmed'), STATUS.FAILED);
   }
 
   async function applyToJob(ctx) {
@@ -298,10 +395,12 @@
     for (let step = 0; step < LIMITS.MAX_STEPS; step += 1) {
       await Control.checkpoint();
 
-      const modal = getModal();
+      // Between steps the dialog may re-render: give it a moment before calling it closed.
+      const modal = getModal() || (await D.waitFor(getModal, { timeout: 6000, interval: 300 }));
       if (!modal) {
-        if (successVisible()) return { status: STATUS.APPLIED, reason: 'Candidatura enviada.' };
-        throw new SkipJob('O formulário foi fechado inesperadamente.', STATUS.FAILED);
+        if (successVisible()) return { status: STATUS.APPLIED, reason: M('applied') };
+        await Store.log('warn', M('dialogDiagnostic', dialogDiagnostic()));
+        throw new SkipJob(M('formClosed'), STATUS.FAILED);
       }
       if (hitDailyLimit(modal)) throw new LimitReached();
 
@@ -311,7 +410,7 @@
       setFollowCompany(modal, !!ctx.settings.followCompanies);
 
       action = primaryAction(getModal() || modal);
-      if (!action) throw new SkipJob('Botão de avanço não encontrado no formulário.', STATUS.FAILED);
+      if (!action) throw new SkipJob(M('noNextButton'), STATUS.FAILED);
       await D.waitFor(() => !D.isDisabled(action.button), { timeout: 3000 });
       await D.pause(500, 1100);
 
@@ -324,7 +423,7 @@
         await D.waitFor(
           () => {
             const m = getModal();
-            return !m || stepSignature(m) !== before || errorsIn(m).length > 0;
+            return m && (stepSignature(m) !== before || errorsIn(m).length > 0);
           },
           { timeout: 8000, interval: 300 }
         );
@@ -335,18 +434,18 @@
       const errors = current ? errorsIn(current) : [];
       if (errors.length) {
         validationRetries += 1;
-        await Store.log('warn', `Validação do LinkedIn: ${errors.slice(0, 3).join(' | ')}`);
+        await Store.log('warn', M('validationLog', { errors: errors.slice(0, 3).join(' | ') }));
         if (validationRetries > LIMITS.MAX_VALIDATION_RETRIES) {
-          throw new SkipJob(`Formulário não aceitou as respostas: ${errors[0]}`, STATUS.FAILED);
+          throw new SkipJob(M('validationFailed', { error: errors[0] }), STATUS.FAILED);
         }
         // Errors not attached to any answerable field (e.g. a required file upload) cannot be fixed.
         const answerable = Fields.extractFields(current).some((f) => f.error);
-        if (!answerable) throw new SkipJob(`Campo que não pode ser preenchido automaticamente: ${errors[0]}`, STATUS.FAILED);
+        if (!answerable) throw new SkipJob(M('unfillable', { error: errors[0] }), STATUS.FAILED);
       } else {
         validationRetries = 0;
       }
     }
-    throw new SkipJob('Formulário com etapas demais.', STATUS.FAILED);
+    throw new SkipJob(M('tooManySteps'), STATUS.FAILED);
   }
 
   /** Runs one job end to end and always leaves the page without an open modal. */
@@ -361,7 +460,7 @@
           /* best effort */
         }
       }
-      if (err instanceof SkipJob) return { status: err.status, reason: err.message };
+      if (err instanceof SkipJob) return { status: err.status, reason: err.reason };
       throw err;
     }
   }
