@@ -223,6 +223,20 @@
     return field;
   }
 
+  /**
+   * Quando o placeholder ("Selecionar opção") é disabled e nada vem marcado, o
+   * navegador seleciona sozinho a primeira opção válida. Isso não é uma resposta
+   * do usuário, então o select continua sendo tratado como vazio, a não ser que
+   * a extensão mesma tenha escolhido essa opção.
+   */
+  function autoSelected(el, selected) {
+    if (el.dataset && el.dataset.laaFilled === selected.value) return false;
+    const first = Array.from(el.options).find((o) => !o.disabled);
+    const placeholder = Array.from(el.options).some((o) => o.disabled && T.isPlaceholderOption(o.textContent, o.value));
+    const marked = Array.from(el.options).some((o) => o.defaultSelected);
+    return placeholder && !marked && selected === first;
+  }
+
   function fromControl(el, container) {
     const tag = el.tagName;
     const group = groupOf(el);
@@ -231,7 +245,7 @@
     if (tag === 'SELECT') {
       const opts = Array.from(el.options).filter((o) => !T.isPlaceholderOption(o.textContent, o.value));
       const selected = el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null;
-      const hasValue = !!selected && !T.isPlaceholderOption(selected.textContent, selected.value);
+      const hasValue = !!selected && !T.isPlaceholderOption(selected.textContent, selected.value) && !autoSelected(el, selected);
       return build({
         type: 'select',
         label,
@@ -599,6 +613,7 @@
         const idx = T.matchOption(field.options, value);
         if (idx < 0) return { ok: false, reason: M('optionNotFound', { value: String(value) }) };
         D.setSelect(field.el, field.optionEls[idx].value);
+        if (field.el.dataset) field.el.dataset.laaFilled = field.optionEls[idx].value;
         await D.pause(150, 350);
         return { ok: field.el.value === field.optionEls[idx].value };
       }

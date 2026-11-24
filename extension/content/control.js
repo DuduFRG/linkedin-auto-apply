@@ -20,12 +20,17 @@
 
   /** Thrown to abandon the current job and move on to the next one. */
   class SkipJob extends Error {
-    /** @param reason i18n message object { key, params } */
-    constructor(reason, status = LAA.C.STATUS.SKIPPED) {
+    /**
+     * @param reason i18n message object { key, params }
+     * @param systemic true quando a falha indica um problema geral (página ou formulário
+     *   que não abre), e não um campo específico desta vaga. Só essas contam para pausar.
+     */
+    constructor(reason, status = LAA.C.STATUS.SKIPPED, systemic = false) {
       super(reason && reason.key ? reason.key : String(reason));
       this.name = 'SkipJob';
       this.reason = reason;
       this.status = status;
+      this.systemic = systemic;
     }
   }
 

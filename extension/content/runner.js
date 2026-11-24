@@ -64,7 +64,10 @@
       const stats = { applied: 0, skipped: 0, failed: 0, ...(run.stats || {}) };
       stats[result.status] = (stats[result.status] || 0) + 1;
       const processed = Array.from(new Set([...(run.processed || []), job.jobId])).slice(-500);
-      return { ...run, stats, processed, errorStreak: result.status === STATUS.FAILED ? (run.errorStreak || 0) + 1 : 0 };
+      // Só falhas gerais (vaga ou formulário que não abre) contam para pausar.
+      // Um campo que não foi lido falha só esta vaga e a execução segue.
+      const errorStreak = result.status === STATUS.FAILED && result.systemic ? (run.errorStreak || 0) + 1 : 0;
+      return { ...run, stats, processed, errorStreak };
     });
     const level = { applied: 'success', skipped: 'info', failed: 'warn' }[result.status] || 'info';
     const label = [job.title, job.company].filter(Boolean).join(' · ') || M('jobFallback', { id: job.jobId });
