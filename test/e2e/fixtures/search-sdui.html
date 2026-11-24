@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mock: results without ids in the markup (newer layout)</title>
+    <style>
+      .list { height: 320px; overflow-y: auto; border: 1px solid #ddd; width: 380px; }
+      .card { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+      .pane { position: absolute; left: 420px; top: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="list" role="list">
+      <div class="card" role="button" tabindex="0" data-j="4400000001"><p>Filmmaker / Videografo</p><p>ENFAF</p><div><span>Visto</span> · <span>Candidatura simplificada</span></div></div>
+      <div class="card" role="button" tabindex="0" data-j="4400000002"><p>Editor de vídeo vertical</p><p>ENFAF</p><div><span>Candidatura simplificada</span></div></div>
+      <div class="card" role="button" tabindex="0" data-j="4400000003"><p>Motion Designer</p><p>GoMining</p><div><span>Candidatou-se</span> · <span>Candidatura simplificada</span></div></div>
+      <div class="card" role="button" tabindex="0" data-j="4400000004"><p>Designer externo</p><p>Outra</p><div><span>Candidatar-se</span></div></div>
+      <div class="card" role="button" tabindex="0" data-j="4400000005"><p>Social media</p><p>Values</p><div><span>Candidatura simplificada</span></div></div>
+    </div>
+    <div class="pane"><h2>Detalhe</h2><button type="button">Candidatura simplificada</button></div>
+    <script>
+      document.querySelectorAll('.card').forEach((c) =>
+        c.addEventListener('click', () => {
+          const url = '?currentJobId=' + c.dataset.j + '&keywords=x';
+          try { history.pushState({}, '', url); } catch (_) { location.hash = url; }
+        })
+      );
+    </script>
+  </body>
+</html>

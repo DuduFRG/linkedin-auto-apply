@@ -144,8 +144,83 @@
     // The job open in the detail pane is always a result of this search.
     consider(Urls.jobIdFromUrl(location.href), null);
 
+    // Newer result pages carry no job id in the markup: open each card like a person would.
+    if (ids.length + appliedOnPage <= 1) {
+      const clicked = await collectByClicking();
+      clicked.applied.forEach((id) => {
+        if (!seen.has(id)) {
+          seen.add(id);
+          appliedOnPage += 1;
+        }
+      });
+      clicked.ids.forEach((id) => consider(id, null));
+    }
+
     const empty = ids.length === 0 && appliedOnPage === 0;
     return { ids, appliedOnPage, empty, diagnostic: empty ? diagnose() : null };
+  }
+
+  // ---------- Card clicking (layouts without ids in the markup) ----------
+
+  /** Small labels reading "Easy Apply" / "Candidatura simplificada" on result cards (never the apply button). */
+  function easyApplyLabels() {
+    return D.all('span, p, small, li, div', document).filter((el) => {
+      if (el.childElementCount > 2) return false;
+      if (el.closest('button')) return false;
+      const t = D.text(el);
+      return t.length > 0 && t.length < 60 && T.includesAny(t, UI_TEXT.easyApply);
+    });
+  }
+
+  /** The largest ancestor of a label that contains no other card's label: the card itself. */
+  function cardOfLabel(label, labels) {
+    let node = label;
+    for (let depth = 0; depth < 14; depth += 1) {
+      const parent = node.parentElement;
+      if (!parent || parent === document.body) break;
+      const count = labels.filter((l) => parent.contains(l)).length;
+      if (count > 1) break;
+      node = parent;
+    }
+    return node;
+  }
+
+  /**
+   * Clicks each Easy Apply card in order and reads the job id LinkedIn puts in
+   * the address (currentJobId). Returns { ids, applied }.
+   */
+  async function collectByClicking(limit = 30) {
+    const ids = [];
+    const applied = [];
+    const labels = easyApplyLabels();
+    // Leaf labels only: drop wrappers that contain another label.
+    const leaves = labels.filter((l) => !labels.some((o) => o !== l && l.contains(o)));
+    const cardsFound = [];
+    leaves.forEach((l) => {
+      const card = cardOfLabel(l, leaves);
+      if (!cardsFound.includes(card)) cardsFound.push(card);
+    });
+
+    for (const card of cardsFound.slice(0, limit)) {
+      if (!card.isConnected) continue;
+      const before = Urls.jobIdFromUrl(location.href);
+      const target = card.querySelector('a, [role="link"], [role="button"], [tabindex="0"]') || card;
+      D.click(target);
+      const id = await D.waitFor(
+        () => {
+          const now = Urls.jobIdFromUrl(location.href);
+          return now && now !== before ? now : null;
+        },
+        { timeout: 3000, interval: 150 }
+      );
+      const jobId = id || (cardsFound.indexOf(card) === 0 ? before : null);
+      if (jobId && !ids.includes(jobId) && !applied.includes(jobId)) {
+        if (cardMarkedApplied(card)) applied.push(jobId);
+        else ids.push(jobId);
+      }
+      await D.pause(250, 600);
+    }
+    return { ids, applied };
   }
 
   /** Counts that help fix selectors when LinkedIn changes its layout. */
@@ -155,6 +230,7 @@
       cards: cards().length,
       links: jobLinks().length,
       noResultsBanner: !!D.first(SEL.noResults),
+      labels: easyApplyLabels().length,
     };
   }
 

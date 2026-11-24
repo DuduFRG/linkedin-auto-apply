@@ -275,6 +275,35 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     await page.close();
   });
 
+  await t.test('search page without ids in the markup: opens each Easy Apply card to read its id', async () => {
+    const page = await openPage(browser, 'search-sdui.html', BASE_SEED);
+    const res = await page.evaluate(() => window.LAA.Search.collect());
+    assert.deepEqual(res.ids, ['4400000001', '4400000002', '4400000005']);
+    assert.equal(res.appliedOnPage, 1);
+    await page.close();
+  });
+
+  await t.test('dialog built as a native <dialog> element is found and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#native'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    assert.equal((await page.evaluate(() => window.__mock)).submitted.english, 'Professional');
+    await page.close();
+  });
+
   await t.test('search page: collects unique ids and ignores applied cards', async () => {
     const page = await openPage(browser, 'search.html', BASE_SEED);
     const res = await page.evaluate(() => window.LAA.Search.collect());

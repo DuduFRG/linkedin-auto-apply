@@ -18,6 +18,8 @@
   // ---------------- Page inspection ----------------
 
   /** A button that moves the application forward (next, review or submit), in any supported language. */
+  const BUTTONS = 'button, [role="button"], input[type="submit"]';
+
   function isFlowButton(b) {
     const label = `${D.text(b)} ${b.getAttribute('aria-label') || ''}`;
     return T.includesAny(label, UI_TEXT.next) || T.includesAny(label, UI_TEXT.review) || T.includesAny(label, UI_TEXT.submit);
@@ -29,14 +31,39 @@
       candidates.find((m) => m.matches('.jobs-easy-apply-modal')) ||
       candidates.find((m) => D.first(SEL.modalForm, m) && D.first(['footer button', 'button.artdeco-button--primary'], m)) ||
       // Newer layouts: any dialog with form controls and a next / review / submit button.
-      candidates.find((m) => hasControls(m) && D.all('button', m).some(isFlowButton)) ||
+      candidates.find((m) => hasControls(m) && D.all(BUTTONS, m).some(isFlowButton)) ||
       // Dialog content loaded as an iframe document: its body is the form.
       D.roots(document)
         .filter((r) => r !== document && r.nodeType === 9 && r.body)
         .map((doc) => doc.body)
-        .find((body) => D.isVisible(body.ownerDocument.defaultView.frameElement || body) && hasControls(body) && D.all('button', body).some(isFlowButton)) ||
+        .find((body) => D.isVisible(body.ownerDocument.defaultView.frameElement || body) && hasControls(body) && D.all(BUTTONS, body).some(isFlowButton)) ||
+      containerOfFlowButton() ||
       null
     );
+  }
+
+  /**
+   * Last resort for unknown markup: start from a visible next / review / submit
+   * button and climb to the element that holds it together with the form
+   * fields. Only an ancestor that is a dialog, a modal or a fixed overlay
+   * qualifies, so page-level controls (like the global search box) are never
+   * mistaken for the application form.
+   */
+  function containerOfFlowButton() {
+    const buttons = D.all(BUTTONS, document).filter(isFlowButton);
+    for (const button of buttons) {
+      let node = button.parentElement || (button.getRootNode() && button.getRootNode().host);
+      let withControls = null;
+      for (let depth = 0; node && depth < 25; depth += 1) {
+        const isDoc = node === node.ownerDocument.body || node === node.ownerDocument.documentElement;
+        if (isDoc) break;
+        if (!withControls && hasControls(node)) withControls = node;
+        const fixed = D.viewOf(node).getComputedStyle(node).position === 'fixed';
+        if (withControls && (node.matches('dialog, [role="dialog"], [aria-modal="true"]') || fixed)) return node;
+        node = node.parentElement || (node.getRootNode() && node.getRootNode().host) || null;
+      }
+    }
+    return null;
   }
 
   function hasControls(scope) {
@@ -135,7 +162,7 @@
     if (next) return { button: next, kind: 'next' };
 
     // Text fallback for layouts without the data attributes: the last flow button wins (it is the primary one).
-    const flow = D.all('button', modal).filter(isFlowButton);
+    const flow = D.all(BUTTONS, modal).filter(isFlowButton);
     if (flow.length) {
       const button = flow[flow.length - 1];
       const label = `${D.text(button)} ${button.getAttribute('aria-label') || ''}`;

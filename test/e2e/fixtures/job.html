@@ -142,7 +142,16 @@
         }
         function q(sel, root) { return (root || mount).querySelector(sel); }
 
+        // "#native" mimics LinkedIn's newer React layout: a native <dialog>, no
+        // LinkedIn classes or data attributes, buttons identified only by text.
+        const NATIVE = location.hash === '#native';
+
         function footer(i) {
+          if (NATIVE) {
+            if (i === steps.length - 1) return '<button type="button" class="x1">Enviar candidatura</button>';
+            if (i === steps.length - 2) return '<button type="button" class="x1">Revisar</button>';
+            return '<button type="button" class="x1"><span>Avançar</span></button>';
+          }
           if (i === steps.length - 1) {
             return '<button class="artdeco-button artdeco-button--primary" data-live-test-easy-apply-submit-button aria-label="Submit application">Submit application</button>';
           }
@@ -153,10 +162,23 @@
         }
 
         function render() {
-          const old = q('.jobs-easy-apply-modal');
+          const old = q('[data-mock-modal]');
           if (old) old.remove();
           const s = steps[state.step];
-          const modal = document.createElement('div');
+          const modal = document.createElement(NATIVE ? 'dialog' : 'div');
+          modal.setAttribute('data-mock-modal', '');
+          if (NATIVE) {
+            modal.setAttribute('open', '');
+            modal.style.cssText = 'position:fixed;inset:40px;margin:0;width:auto;height:auto;';
+            modal.innerHTML = `
+            <button type="button" aria-label="Fechar">x</button>
+            <div class="c1">
+              <div class="p1"><span>${s.progress}%</span></div>
+              <h3>${s.title}</h3>
+              ${s.html}
+            </div>
+            <div class="f1">${footer(state.step)}</div>`;
+          } else {
           modal.className = 'artdeco-modal jobs-easy-apply-modal';
           modal.setAttribute('role', 'dialog');
           modal.setAttribute('data-test-modal', '');
@@ -168,6 +190,7 @@
               ${s.html}
             </form></div>
             <footer>${footer(state.step)}</footer>`;
+          }
           mount.appendChild(modal);
           modal.querySelectorAll('input[name="resume"]').forEach((r) =>
             r.addEventListener('change', () => {
@@ -176,8 +199,8 @@
               });
             })
           );
-          modal.querySelector('footer button').addEventListener('click', onPrimary);
-          modal.querySelector('[data-test-modal-close-btn]').addEventListener('click', onDismiss);
+          modal.querySelector('footer button, .f1 button').addEventListener('click', onPrimary);
+          modal.querySelector('[data-test-modal-close-btn], [aria-label="Fechar"]').addEventListener('click', onDismiss);
         }
 
         function setError(el, message) {
@@ -212,7 +235,7 @@
         }
 
         function onPrimary() {
-          const modal = q('.jobs-easy-apply-modal');
+          const modal = q('[data-mock-modal]');
           if (!validate(modal)) return;
           collect(modal);
           if (state.step === steps.length - 1) {
@@ -242,7 +265,7 @@
           dialog.querySelector('[data-test-dialog-secondary-btn]').addEventListener('click', () => {
             state.discarded = true;
             dialog.remove();
-            const modal = q('.jobs-easy-apply-modal');
+            const modal = q('[data-mock-modal]');
             if (modal) modal.remove();
           });
         }
