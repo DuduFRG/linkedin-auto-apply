@@ -73,10 +73,19 @@
     return !!(group && group.querySelector('.fb-dash-form-element__label--required, [data-test-required]'));
   }
 
-  function errorFor(group) {
+  function errorFor(group, controls) {
     if (!group) return '';
-    const err = D.first(SEL.fieldError, group);
-    return err ? D.text(err) : '';
+    const own = errorTexts(group)[0];
+    if (own) return own;
+    // Some layouts mark the control itself and point to the message.
+    const invalid = (controls || []).find((c) => c.getAttribute && c.getAttribute('aria-invalid') === 'true');
+    if (invalid) {
+      const ids = (invalid.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+      const rootNode = invalid.getRootNode();
+      const msg = ids.map((id) => (rootNode.getElementById ? rootNode.getElementById(id) : null)).filter(Boolean).map((n) => D.text(n)).join(' ');
+      return msg || 'Campo obrigatório';
+    }
+    return '';
   }
 
   function optionLabel(input) {
@@ -90,70 +99,89 @@
     return SEL.followCompany.some((sel) => el.matches(sel));
   }
 
+  /** Deep query inside the dialog (also inside nested shadow roots / frames), visible or not. */
+  function deep(scope, sel) {
+    return D.all(sel, scope, { visible: false });
+  }
+
+  /** Lowest element containing every node in the list. */
+  function commonAncestor(nodes) {
+    if (!nodes.length) return null;
+    let anc = nodes[0].parentElement;
+    while (anc && !nodes.every((n) => anc.contains(n))) anc = anc.parentElement;
+    return anc;
+  }
+
+  const ERROR_TEXT = /(obrigat[oó]rio|required|obligatorio|requerido|please (enter|select|make)|enter a (valid|whole|decimal)|insira um|informe um|introduce un|ingresa un|n[uú]mero (inteiro|entero)|whole number|invalid|inv[aá]lid)/i;
+
+  /** Validation messages inside a scope: known classes, alerts, or short red-flag sentences. */
+  function errorTexts(scope) {
+    if (!scope) return [];
+    const out = [];
+    const push = (t) => {
+      const v = String(t || '').trim();
+      if (v && v.length < 160 && !out.includes(v)) out.push(v);
+    };
+    D.all(SEL.fieldError, scope).forEach((e) => push(D.text(e)));
+    D.all('[role="alert"], [aria-live="assertive"], [id*="error" i], [class*="error" i]', scope).forEach((e) => {
+      const t = D.text(e);
+      if (ERROR_TEXT.test(t)) push(t);
+    });
+    if (!out.length) {
+      D.all('span, p, div', scope).forEach((e) => {
+        if (e.childElementCount > 1) return;
+        const t = D.text(e);
+        if (t.length < 90 && ERROR_TEXT.test(t) && !e.closest('label, legend, button, option, select')) push(t);
+      });
+    }
+    return out;
+  }
+
+  /**
+   * The question text for a group of controls: aria labelling, a legend, or the
+   * nearest text block that precedes the group (and is not one of its options).
+   */
+  function questionText(group, optionTexts) {
+    if (!group) return { label: '', raw: '' };
+    const lb = group.getAttribute && group.getAttribute('aria-labelledby');
+    if (lb) {
+      const rootNode = group.getRootNode();
+      const node = lb
+        .split(/\s+/)
+        .map((id) => (rootNode.getElementById ? rootNode.getElementById(id) : null))
+        .find(Boolean);
+      if (node && labelText(node)) return { label: labelText(node), raw: rawLabelText(node) };
+    }
+    const aria = group.getAttribute && group.getAttribute('aria-label');
+    if (aria && T.cleanLabel(aria)) return { label: T.cleanLabel(aria), raw: aria };
+    const legend = group.querySelector && group.querySelector('legend');
+    if (legend && labelText(legend)) return { label: labelText(legend), raw: rawLabelText(legend) };
+
+    const isOption = (t) => optionTexts.some((o) => T.normalize(o) === T.normalize(t));
+    // Walk outwards from the controls: the closest preceding text block is the question.
+    // A sibling that holds its own controls belongs to another field and stops the search.
+    let node = group;
+    for (let depth = 0; node && depth < 4; depth += 1) {
+      let prev = node.previousElementSibling;
+      while (prev) {
+        if (prev.matches('input, select, textarea') || prev.querySelector('input, select, textarea, [role="radio"], [role="checkbox"]')) {
+          return { label: '', raw: '' };
+        }
+        const t = labelText(prev);
+        if (t && !isOption(t) && !ERROR_TEXT.test(t) && t.length < 400) return { label: t, raw: rawLabelText(prev) };
+        prev = prev.previousElementSibling;
+      }
+      node = node.parentElement;
+      if (!node || node.matches('form, dialog, [role="dialog"]')) break;
+    }
+    return { label: '', raw: '' };
+  }
+
   function build(base) {
     const field = { ...base };
     field.family = T.familyOf(field.type);
     field.key = T.questionKey(field.type, field.label);
     return field;
-  }
-
-  function fromFieldset(fs, container) {
-    const legend = fs.querySelector('legend');
-    const raw = rawLabelText(legend);
-    const label = labelText(legend) || T.cleanLabel(fs.getAttribute('aria-label'));
-    const radios = Array.from(fs.querySelectorAll('input[type="radio"]')).filter((i) => !excluded(i));
-    const checks = Array.from(fs.querySelectorAll('input[type="checkbox"]')).filter((i) => !excluded(i));
-    const group = fs.closest(GROUP_SELECTOR) || fs;
-
-    if (radios.length) {
-      const checked = radios.find((r) => r.checked);
-      return build({
-        type: 'radio',
-        label,
-        required: isRequired(radios[0], raw, group) || fs.getAttribute('aria-required') === 'true',
-        options: radios.map(optionLabel),
-        optionEls: radios,
-        hasValue: !!checked,
-        currentValue: checked ? optionLabel(checked) : null,
-        error: errorFor(group),
-        el: radios[0],
-        group,
-        handled: radios,
-      });
-    }
-    if (checks.length > 1) {
-      const checked = checks.filter((c) => c.checked).map(optionLabel);
-      return build({
-        type: 'checkboxes',
-        label,
-        required: isRequired(checks[0], raw, group) || fs.getAttribute('aria-required') === 'true',
-        options: checks.map(optionLabel),
-        optionEls: checks,
-        hasValue: checked.length > 0,
-        currentValue: checked,
-        error: errorFor(group),
-        el: checks[0],
-        group,
-        handled: checks,
-      });
-    }
-    if (checks.length === 1) {
-      const box = checks[0];
-      return build({
-        type: 'checkbox',
-        label: label || optionLabel(box),
-        required: isRequired(box, raw, group),
-        options: [],
-        optionEls: [box],
-        hasValue: box.checked,
-        currentValue: box.checked ? 'yes' : 'no',
-        error: errorFor(group),
-        el: box,
-        group,
-        handled: checks,
-      });
-    }
-    return null;
   }
 
   function fromControl(el, container) {
@@ -193,7 +221,7 @@
       });
     }
 
-    const type = (el.getAttribute('type') || 'text').toLowerCase();
+    const type = el.getAttribute('role') === 'checkbox' ? 'checkbox' : (el.getAttribute('type') || 'text').toLowerCase();
     if (type === 'checkbox') {
       return build({
         type: 'checkbox',
@@ -201,8 +229,8 @@
         required: isRequired(el, raw, group),
         options: [],
         optionEls: [el],
-        hasValue: el.checked,
-        currentValue: el.checked ? 'yes' : 'no',
+        hasValue: isChecked(el),
+        currentValue: isChecked(el) ? 'yes' : 'no',
         error: errorFor(group),
         el,
         group,
@@ -228,63 +256,125 @@
     });
   }
 
+  /** Error for a group of controls, also looking at the message right after it. */
+  function errorNear(group, controls) {
+    const inside = errorFor(group, controls);
+    if (inside) return inside;
+    // The message often sits right after the controls; never look into the next field.
+    let sib = group && group.nextElementSibling;
+    for (let i = 0; sib && i < 2; i += 1) {
+      if (sib.querySelector('input, select, textarea, [role="radio"], [role="checkbox"]')) break;
+      const t = errorTexts(sib)[0];
+      if (t) return t;
+      sib = sib.nextElementSibling;
+    }
+    return '';
+  }
+
+  function textOfOption(el) {
+    if (el.tagName === 'INPUT') return optionLabel(el);
+    return T.cleanLabel(el.getAttribute('aria-label')) || labelText(el);
+  }
+
+  function isChecked(el) {
+    return el.tagName === 'INPUT' ? el.checked : el.getAttribute('aria-checked') === 'true';
+  }
+
+  /** A radio question from its option controls (native inputs or role="radio" widgets). */
+  function radioField(radios, container) {
+    const options = radios.map(textOfOption);
+    const fs = radios[0].closest('fieldset, [role="radiogroup"]');
+    const group = fs && radios.every((r) => fs.contains(r)) ? fs : commonAncestor(radios) || radios[0].parentElement;
+    let { label, raw } = questionText(group, options);
+    if (!label && fs) label = T.cleanLabel(fs.getAttribute('aria-label'));
+    const checked = radios.find(isChecked);
+    return build({
+      type: 'radio',
+      label,
+      required:
+        isRequired(radios[0], raw, group) ||
+        (group.getAttribute && group.getAttribute('aria-required') === 'true') ||
+        /\*\s*$/.test(String(raw).trim()),
+      options,
+      optionEls: radios,
+      hasValue: !!checked,
+      currentValue: checked ? textOfOption(checked) : null,
+      error: errorNear(group, radios),
+      el: radios[0],
+      group,
+    });
+  }
+
   /** Extracts every answerable field inside the Easy Apply modal. */
   function extractFields(container) {
     const fields = [];
     const handled = new Set();
+    const pushField = (field, controls) => {
+      controls.forEach((c) => handled.add(c));
+      if (field && field.label) fields.push(field);
+    };
 
-    container.querySelectorAll('fieldset').forEach((fs) => {
-      if (!D.isVisible(fs) || excluded(fs)) return;
-      const field = fromFieldset(fs, container);
-      if (!field) return;
-      field.handled.forEach((i) => handled.add(i));
-      delete field.handled;
-      if (field.label) fields.push(field);
+    // 1. Radio questions: native inputs grouped by name, or role="radio" widgets grouped by radiogroup.
+    const byGroup = new Map();
+    deep(container, 'input[type="radio"], [role="radio"]').forEach((el) => {
+      if (excluded(el) || el.disabled) return;
+      const box = el.closest('fieldset, [role="radiogroup"]');
+      const key = el.tagName === 'INPUT' && el.name ? `name:${el.name}` : box || el.parentElement;
+      if (!byGroup.has(key)) byGroup.set(key, []);
+      byGroup.get(key).push(el);
+    });
+    byGroup.forEach((radios) => {
+      const anyVisible = radios.some((r) => D.isVisible(r) || D.isVisible(findLabelNode(r, container) || r) || D.isVisible(r.parentElement));
+      if (!anyVisible) return;
+      pushField(radioField(radios, container), radios);
     });
 
-    // Radios outside fieldsets: group them by name.
-    const looseRadios = new Map();
-    container.querySelectorAll('input, select, textarea').forEach((el) => {
+    // 2. Checkbox groups inside a fieldset / group, and single checkboxes.
+    deep(container, 'fieldset, [role="group"]').forEach((fs) => {
+      if (excluded(fs) || !D.isVisible(fs)) return;
+      const checks = deep(fs, 'input[type="checkbox"], [role="checkbox"]').filter((c) => !handled.has(c) && !excluded(c));
+      if (checks.length < 2) return;
+      const options = checks.map(textOfOption);
+      const { label, raw } = questionText(fs, options);
+      const checked = checks.filter(isChecked).map(textOfOption);
+      pushField(
+        build({
+          type: 'checkboxes',
+          label,
+          required: isRequired(checks[0], raw, fs) || fs.getAttribute('aria-required') === 'true',
+          options,
+          optionEls: checks,
+          hasValue: checked.length > 0,
+          currentValue: checked,
+          error: errorNear(fs, checks),
+          el: checks[0],
+          group: fs,
+        }),
+        checks
+      );
+    });
+
+    // 3. Everything else: text, number, date, typeahead, select, textarea, single checkbox.
+    deep(container, 'input, select, textarea, [role="checkbox"]').forEach((el) => {
       if (handled.has(el) || excluded(el)) return;
       const type = (el.getAttribute('type') || '').toLowerCase();
       if (el.tagName === 'INPUT' && SKIP_INPUT_TYPES.has(type)) return;
+      if (type === 'radio') return;
       if (el.disabled || el.readOnly) return;
 
-      if (type === 'radio') {
-        if (!el.name) return;
-        if (!looseRadios.has(el.name)) looseRadios.set(el.name, []);
-        looseRadios.get(el.name).push(el);
-        return;
-      }
-
-      // Radio / checkbox inputs are often visually hidden; their label is what's visible.
-      const target = type === 'checkbox' ? findLabelNode(el, container) || el : el;
+      // Checkbox inputs are often visually hidden; their label is what's visible.
+      const target = type === 'checkbox' || el.getAttribute('role') === 'checkbox' ? findLabelNode(el, container) || el : el;
       if (!D.isVisible(target) && !D.isVisible(el)) return;
 
       const field = fromControl(el, container);
-      if (field && field.label) fields.push(field);
-    });
-
-    looseRadios.forEach((radios) => {
-      const group = groupOf(radios[0]);
-      const labelNode = group && group.querySelector('legend, label:not([for]), .fb-dash-form-element__label, span');
-      const label = labelText(labelNode);
-      if (!label) return;
-      const checked = radios.find((r) => r.checked);
-      fields.push(
-        build({
-          type: 'radio',
-          label,
-          required: isRequired(radios[0], rawLabelText(labelNode), group),
-          options: radios.map(optionLabel),
-          optionEls: radios,
-          hasValue: !!checked,
-          currentValue: checked ? optionLabel(checked) : null,
-          error: errorFor(group),
-          el: radios[0],
-          group,
-        })
-      );
+      if (field && !field.label) {
+        const q = questionText(el, []);
+        field.label = q.label;
+        field.key = T.questionKey(field.type, field.label);
+        if (/\*\s*$/.test(String(q.raw).trim())) field.required = true;
+      }
+      if (field && !field.error) field.error = errorNear(field.group || el.parentElement, [el]);
+      pushField(field, [el]);
     });
 
     return fields;
@@ -293,6 +383,10 @@
   // ---------------- Filling ----------------
 
   function clickChoice(input) {
+    if (input.tagName !== 'INPUT') {
+      D.click(input);
+      return isChecked(input);
+    }
     const label = findLabelNode(input, document);
     D.click(label && label.tagName === 'LABEL' ? label : input);
     if (!input.checked) {
@@ -303,7 +397,11 @@
   }
 
   function setChecked(input, want) {
-    if (input.checked === want) return true;
+    if (isChecked(input) === want) return true;
+    if (input.tagName !== 'INPUT') {
+      D.click(input);
+      return isChecked(input) === want;
+    }
     const label = findLabelNode(input, document);
     D.click(label && label.tagName === 'LABEL' ? label : input);
     if (input.checked !== want) input.click();
@@ -377,7 +475,7 @@
         const want = T.boolish(value) !== false;
         setChecked(field.el, want);
         await D.pause(150, 350);
-        return { ok: field.el.checked === want };
+        return { ok: isChecked(field.el) === want };
       }
       default:
         return { ok: false, reason: M('unsupportedType', { type: field.type }) };
@@ -399,5 +497,5 @@
     };
   }
 
-  LAA.Fields = Object.freeze({ extractFields, fillField, toQuestion });
+  LAA.Fields = Object.freeze({ extractFields, fillField, toQuestion, errorTexts });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

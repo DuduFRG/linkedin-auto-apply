@@ -25,7 +25,20 @@
     return T.includesAny(label, UI_TEXT.next) || T.includesAny(label, UI_TEXT.review) || T.includesAny(label, UI_TEXT.submit);
   }
 
+  // The dialog found last time: re-renders between steps can briefly detach it.
+  let lastModal = null;
+
   function getModal() {
+    if (lastModal && lastModal.isConnected && D.isVisible(lastModal) && hasControlsOrButtons(lastModal)) return lastModal;
+    lastModal = findModal();
+    return lastModal;
+  }
+
+  function hasControlsOrButtons(m) {
+    return hasControls(m) || D.all(BUTTONS, m).some(isFlowButton);
+  }
+
+  function findModal() {
     const candidates = D.all(SEL.modal);
     return (
       candidates.find((m) => m.matches('.jobs-easy-apply-modal')) ||
@@ -136,9 +149,7 @@
   }
 
   function errorsIn(modal) {
-    return D.all(SEL.fieldError, modal)
-      .map((e) => D.text(e))
-      .filter(Boolean);
+    return Fields.errorTexts(modal);
   }
 
   function stepSignature(modal) {
@@ -349,12 +360,18 @@
     await Control.checkpoint();
     D.click(action.button);
 
+    let goneSince = 0;
     const outcome = await D.waitFor(
       () => {
         if (successVisible()) return 'success';
         if (hitDailyLimit()) return 'limit';
         const modal = getModal();
-        if (!modal) return 'success';
+        if (!modal) {
+          // Count it as sent only once the dialog has stayed gone for a moment.
+          goneSince = goneSince || Date.now();
+          return Date.now() - goneSince > 1500 ? 'success' : null;
+        }
+        goneSince = 0;
         if (errorsIn(modal).length) return 'error';
         return null;
       },
@@ -378,9 +395,11 @@
     for (let step = 0; step < LIMITS.MAX_STEPS; step += 1) {
       await Control.checkpoint();
 
-      const modal = getModal();
+      // Between steps the dialog may re-render: give it a moment before calling it closed.
+      const modal = getModal() || (await D.waitFor(getModal, { timeout: 6000, interval: 300 }));
       if (!modal) {
         if (successVisible()) return { status: STATUS.APPLIED, reason: M('applied') };
+        await Store.log('warn', M('dialogDiagnostic', dialogDiagnostic()));
         throw new SkipJob(M('formClosed'), STATUS.FAILED);
       }
       if (hitDailyLimit(modal)) throw new LimitReached();
@@ -404,7 +423,7 @@
         await D.waitFor(
           () => {
             const m = getModal();
-            return !m || stepSignature(m) !== before || errorsIn(m).length > 0;
+            return m && (stepSignature(m) !== before || errorsIn(m).length > 0);
           },
           { timeout: 8000, interval: 300 }
         );

@@ -37,6 +37,35 @@
         const state = { step: 0, values: {}, submitted: null, discarded: false };
         window.__mock = state;
 
+        // Newer React layout of the questions step: question text in a plain block above the
+        // controls, no <label for>, no fieldset/legend, no LinkedIn classes.
+        const REACT_QUESTIONS = `
+              <div class="q">
+                <div class="t">How many years of experience do you have with Adobe Premiere?*</div>
+                <input id="numeric-years" type="text" required>
+              </div>
+              <div class="q">
+                <div class="t">Do you have a valid driver's license?*</div>
+                <div class="opts">
+                  <div><input type="radio" name="lic" id="lic-y" value="Yes"><label for="lic-y">Yes</label></div>
+                  <div><input type="radio" name="lic" id="lic-n" value="No"><label for="lic-n">No</label></div>
+                </div>
+              </div>
+              <div class="q">
+                <div class="t">What is your level of proficiency in English?*</div>
+                <select id="english" required>
+                  <option value="Select an option">Select an option</option>
+                  <option>None</option>
+                  <option>Conversational</option>
+                  <option>Professional</option>
+                  <option>Native or bilingual</option>
+                </select>
+              </div>
+              <div class="q">
+                <div class="t">Portfolio link</div>
+                <input id="site" type="text">
+              </div>`;
+
         const steps = [
           {
             title: 'Contact info',
@@ -175,7 +204,7 @@
             <div class="c1">
               <div class="p1"><span>${s.progress}%</span></div>
               <h3>${s.title}</h3>
-              ${s.html}
+              ${state.step === 2 ? REACT_QUESTIONS : s.html}
             </div>
             <div class="f1">${footer(state.step)}</div>`;
           } else {
@@ -204,6 +233,16 @@
         }
 
         function setError(el, message) {
+          if (NATIVE) {
+            // Newer layout: a plain block after the control, no error classes.
+            const box = el.closest('.q');
+            const err = document.createElement('div');
+            err.className = 'm7';
+            err.dataset.err = '1';
+            err.textContent = /^Enter/.test(message) ? 'Introduce un número entero entre 0 y 99' : 'Este campo é obrigatório';
+            box.appendChild(err);
+            return;
+          }
           const group = el.closest('[data-test-form-element]');
           const err = document.createElement('div');
           err.className = 'artdeco-inline-feedback artdeco-inline-feedback--error';
@@ -212,7 +251,7 @@
         }
 
         function validate(modal) {
-          modal.querySelectorAll('.artdeco-inline-feedback--error').forEach((e) => e.remove());
+          modal.querySelectorAll('.artdeco-inline-feedback--error, [data-err]').forEach((e) => e.remove());
           let ok = true;
           modal.querySelectorAll('input[type="text"][required], select[required]').forEach((el) => {
             const empty = el.tagName === 'SELECT' ? el.value === 'Select an option' : !el.value.trim();

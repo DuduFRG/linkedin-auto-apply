@@ -147,7 +147,7 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     const result = await runJob(page);
     await responder.stop();
 
-    assert.equal(result.status, 'applied', result.reason);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
     const mock = await page.evaluate(() => window.__mock);
     assert.equal(mock.submitted.email, 'ana@example.com', 'email select filled from profile');
     assert.equal(mock.submitted.cc, 'br', 'country code matched "+55" -> Brazil (+55)');
@@ -181,7 +181,7 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
       answers: store.answers,
     });
     const result2 = await runJob(page2);
-    assert.equal(result2.status, 'applied', result2.reason);
+    assert.equal(result2.status, 'applied', JSON.stringify(result2.reason));
     assert.equal((await page2.evaluate(() => window.__asked)).length, 0, 'no questions on second run');
     await page2.close();
   });
@@ -301,6 +301,43 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     const result = await runJob(page);
     assert.equal(result.status, 'applied', JSON.stringify(result.reason));
     assert.equal((await page.evaluate(() => window.__mock)).submitted.english, 'Professional');
+    await page.close();
+  });
+
+  await t.test('newer question layout: asks the unknown questions, re-asks on a plain-text error, saves answers', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      { ...BASE_SEED, answers: {}, settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' } },
+      '#native'
+    );
+    const responder = autoResponder(page, (q, attempt) => {
+      if (/premiere/i.test(q.label)) return attempt === 1 ? 'cinco' : '5';
+      if (/driver/i.test(q.label)) return 'Sim';
+      if (/english/i.test(q.label)) return 'professional';
+      return '__unexpected__';
+    });
+    const result = await runJob(page);
+    await responder.stop();
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+
+    const asked = await page.evaluate(() => window.__asked);
+    const labels = asked.flatMap((p) => p.questions.map((q) => q.label));
+    assert.ok(labels.includes('How many years of experience do you have with Adobe Premiere?'), labels.join(' | '));
+    assert.ok(labels.includes("Do you have a valid driver's license?"), labels.join(' | '));
+    assert.ok(labels.includes('What is your level of proficiency in English?'), labels.join(' | '));
+    assert.ok(!labels.some((l) => /portfolio/i.test(l)), 'optional field not asked');
+    const retry = asked.flatMap((p) => p.questions).find((q) => /premiere/i.test(q.label) && q.error);
+    assert.ok(retry, 'plain-text validation error triggered a re-ask');
+
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted['numeric-years'], '5');
+    assert.equal(mock.submitted.lic, 'lic-y');
+    assert.equal(mock.submitted.english, 'Professional');
+
+    const store = await page.evaluate(() => window.__data.answers);
+    assert.equal(store['text:how many years of experience do you have with adobe premiere'].value, '5');
+    assert.equal(store['choice:do you have a valid driver s license'].value, 'Sim');
     await page.close();
   });
 
