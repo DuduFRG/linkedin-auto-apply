@@ -364,7 +364,7 @@
     const ready = await D.waitFor(() => findEasyApplyButton() || alreadyApplied() || closedForApplications() || D.first(SEL.jobTitle), {
       timeout: 10000,
     });
-    if (!ready) throw new SkipJob(M('jobNotLoaded'), STATUS.FAILED);
+    if (!ready) throw new SkipJob(M('jobNotLoaded'), STATUS.FAILED, true);
     // Give the top card a moment to render its apply button.
     await D.waitFor(() => findEasyApplyButton() || alreadyApplied(), { timeout: 5000 });
 
@@ -382,7 +382,7 @@
     if (!modal) {
       if (hitDailyLimit()) throw new LimitReached();
       await Store.log('warn', M('dialogDiagnostic', dialogDiagnostic()));
-      throw new SkipJob(M('formNotOpened'), STATUS.FAILED);
+      throw new SkipJob(M('formNotOpened'), STATUS.FAILED, true);
     }
     await D.pause(400, 800);
     return modal;
@@ -498,7 +498,7 @@
           /* best effort */
         }
       }
-      if (err instanceof SkipJob) return { status: err.status, reason: err.reason };
+      if (err instanceof SkipJob) return { status: err.status, reason: err.reason, systemic: !!err.systemic };
       throw err;
     }
   }
