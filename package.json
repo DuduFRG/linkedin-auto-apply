@@ -1,6 +1,6 @@
 {
   "name": "linkedin-auto-apply",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "private": true,
   "description": "ApplyPilot: Chrome extension that automates LinkedIn Easy Apply and learns your answers locally.",
   "license": "MIT",

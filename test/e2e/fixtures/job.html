@@ -214,7 +214,7 @@
         function footer(i) {
           if (NATIVE) {
             if (i === steps.length - 1) return '<button type="button" class="x1">Enviar candidatura</button>';
-            if (i === steps.length - 2) return '<button type="button" class="x1">Revisar</button>';
+            if (i === steps.length - 2) return '<button type="button" class="x1">Voltar</button><button type="button" class="x1">Avaliar</button>';
             return '<button type="button" class="x1"><span>Avançar</span></button>';
           }
           if (i === steps.length - 1) {
@@ -264,7 +264,7 @@
               });
             })
           );
-          modal.querySelector('footer button, .f1 button').addEventListener('click', onPrimary);
+          modal.querySelector('footer button:last-child, .f1 button:last-child').addEventListener('click', onPrimary);
           modal.querySelector('[data-test-modal-close-btn], [aria-label="Fechar"]').addEventListener('click', onDismiss);
         }
 
