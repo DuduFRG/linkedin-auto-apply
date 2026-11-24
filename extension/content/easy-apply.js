@@ -29,9 +29,30 @@
       candidates.find((m) => m.matches('.jobs-easy-apply-modal')) ||
       candidates.find((m) => D.first(SEL.modalForm, m) && D.first(['footer button', 'button.artdeco-button--primary'], m)) ||
       // Newer layouts: any dialog with form controls and a next / review / submit button.
-      candidates.find((m) => m.querySelector('input, select, textarea, fieldset') && D.all('button', m).some(isFlowButton)) ||
+      candidates.find((m) => hasControls(m) && D.all('button', m).some(isFlowButton)) ||
+      // Dialog content loaded as an iframe document: its body is the form.
+      D.roots(document)
+        .filter((r) => r !== document && r.nodeType === 9 && r.body)
+        .map((doc) => doc.body)
+        .find((body) => D.isVisible(body.ownerDocument.defaultView.frameElement || body) && hasControls(body) && D.all('button', body).some(isFlowButton)) ||
       null
     );
+  }
+
+  function hasControls(scope) {
+    return !!D.first(['input:not([type="hidden"])', 'select', 'textarea', 'fieldset'], scope, { visible: false });
+  }
+
+  /** What the page looked like when the dialog could not be found, so selectors can be fixed. */
+  function dialogDiagnostic() {
+    const all = D.roots(document);
+    return {
+      dialogs: D.all('[role="dialog"], dialog, .artdeco-modal', document).length,
+      frames: document.querySelectorAll('iframe').length,
+      frameDocs: all.filter((r) => r !== document && r.nodeType === 9).length,
+      shadows: all.filter((r) => r.nodeType === 11).length,
+      center: D.describeCenter(),
+    };
   }
 
   function jobInfo() {
@@ -141,7 +162,7 @@
   async function discard() {
     const modal = getModal();
     if (!modal) return;
-    const close = D.first(SEL.dismiss, modal);
+    const close = D.first(SEL.dismiss, modal) || D.first(SEL.dismiss);
     if (!close) return;
     D.click(close);
     await D.pause(500, 900);
@@ -286,6 +307,7 @@
     const modal = await D.waitFor(getModal, { timeout: 12000 });
     if (!modal) {
       if (hitDailyLimit()) throw new LimitReached();
+      await Store.log('warn', M('dialogDiagnostic', dialogDiagnostic()));
       throw new SkipJob(M('formNotOpened'), STATUS.FAILED);
     }
     await D.pause(400, 800);

@@ -121,7 +121,17 @@
 
         // "#shadow" renders the dialog inside a shadow root, like LinkedIn's newer layout.
         let mount = document.body;
-        if (location.hash === '#shadow') {
+        if (location.hash === '#iframe') {
+          // Same-origin iframe hosting the dialog, as some LinkedIn layouts do.
+          const frame = document.createElement('iframe');
+          frame.style.cssText = 'position:fixed;inset:20px;width:calc(100% - 40px);height:calc(100% - 40px);border:0;z-index:5';
+          document.body.appendChild(frame);
+          const doc = frame.contentDocument;
+          doc.open();
+          doc.write('<!doctype html><html><head><style>' + document.querySelector('style').textContent + '</style></head><body></body></html>');
+          doc.close();
+          mount = doc.body;
+        } else if (location.hash === '#shadow') {
           const host = document.createElement('div');
           host.id = 'interop-outlet';
           document.body.appendChild(host);

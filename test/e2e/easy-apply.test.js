@@ -210,6 +210,30 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     await page.close();
   });
 
+  await t.test('dialog rendered inside a same-origin iframe is filled and submitted', async () => {
+    const page = await openPage(
+      browser,
+      'job.html',
+      {
+        ...BASE_SEED,
+        settings: { ...BASE_SEED.settings, resumeName: 'CV_Videomaker' },
+        answers: {
+          ...BASE_SEED.answers,
+          'text:how many years of experience do you have with adobe premiere': { label: 'x', family: 'text', value: '5' },
+          'choice:what is your level of proficiency in english': { label: 'x', family: 'choice', value: 'Professional' },
+        },
+      },
+      '#iframe'
+    );
+    const result = await runJob(page);
+    assert.equal(result.status, 'applied', JSON.stringify(result.reason));
+    const mock = await page.evaluate(() => window.__mock);
+    assert.equal(mock.submitted.phone, '11999998888');
+    assert.equal(mock.submitted['numeric-years'], '5');
+    assert.equal(mock.submitted.english, 'Professional');
+    await page.close();
+  });
+
   await t.test('skip from the panel discards the application', async () => {
     const page = await openPage(browser, 'job.html', { ...BASE_SEED, settings: { ...BASE_SEED.settings, resumeName: 'CV_Geral' } });
     const responder = autoResponder(page, () => '__skip__');
