@@ -111,6 +111,7 @@ const COVER_DOC = { coverLetter: { name: 'Cover_Letter.pdf', type: 'application/
 const NEW_LAYOUT_ANSWERS = {
   'choice:are you ready to receive your salary in usdt': { label: 'x', family: 'choice', value: 'No' },
   'multi:languages fluently speaking': { label: 'x', family: 'multi', value: ['English', 'Spanish'] },
+  'choice:what is your level of proficiency in spanish': { label: 'x', family: 'choice', value: 'Professional' },
 };
 
 const BASE_SEED = {
@@ -312,6 +313,8 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     assert.equal(result.status, 'applied', JSON.stringify(result.reason));
     const submitted = (await page.evaluate(() => window.__mock)).submitted;
     assert.equal(submitted.english, 'Professional');
+    assert.equal(submitted._r_2o_, 'Professional', 'saved answer fills the select with a placeholder');
+    assert.equal(submitted._r_f1_, false, 'follow company unticked');
     assert.equal(submitted['radio-group-_r_2u_'], '_r_32_', 'USDT question answered "No" from the option text, not the aria-label');
     assert.deepEqual([submitted.lang0, submitted.lang1, submitted.lang2], [true, false, true], 'languages ticked by their visible names');
     assert.equal(submitted.cover, 'Cover_Letter.pdf', 'stored cover letter attached');
@@ -331,6 +334,7 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
       if (/driver/i.test(q.label)) return 'Sim';
       if (/english/i.test(q.label)) return 'professional';
       if (/usdt/i.test(q.label)) return 'No';
+      if (/spanish/i.test(q.label)) return 'Conversational';
       if (/languages/i.test(q.label)) return ['English', 'Spanish'];
       return '__unexpected__';
     });
@@ -344,6 +348,10 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     assert.ok(labels.includes("Do you have a valid driver's license?"), labels.join(' | '));
     assert.ok(labels.includes('What is your level of proficiency in English?'), labels.join(' | '));
     assert.ok(!labels.some((l) => /portfolio/i.test(l)), 'optional field not asked');
+    assert.ok(!labels.some((l) => /seguir|follow/i.test(l)), 'follow box is never a question');
+    const spanish = asked.flatMap((p) => p.questions).find((q) => /spanish/i.test(q.label));
+    assert.ok(spanish, `select with a placeholder and a distant label is asked: ${labels.join(' | ')}`);
+    assert.deepEqual(spanish.options, ['None', 'Conversational', 'Professional', 'Native or bilingual']);
     const questions = asked.flatMap((p) => p.questions);
     assert.deepEqual(questions.find((q) => /usdt/i.test(q.label)).options, ['Yes', 'No']);
     const langs = questions.find((q) => /languages/i.test(q.label));
@@ -356,8 +364,13 @@ test('Easy Apply engine', { timeout: 180000 }, async (t) => {
     assert.equal(mock.submitted['numeric-years'], '5');
     assert.equal(mock.submitted.lic, 'lic-y');
     assert.equal(mock.submitted.english, 'Professional');
+    assert.equal(mock.submitted._r_2o_, 'Conversational');
+    assert.equal(mock.submitted._r_f1_, false, 'follow company unticked in the newer layout');
 
     const store = await page.evaluate(() => window.__data.answers);
+    assert.equal(store['choice:what is your level of proficiency in spanish'].value, 'Conversational');
+    assert.deepEqual(store['choice:what is your level of proficiency in spanish'].options, ['None', 'Conversational', 'Professional', 'Native or bilingual']);
+    assert.deepEqual(store['choice:are you ready to receive your salary in usdt'].options, ['Yes', 'No']);
     assert.equal(store['text:how many years of experience do you have with adobe premiere'].value, '5');
     assert.equal(store['choice:do you have a valid driver s license'].value, 'Sim');
     await page.close();

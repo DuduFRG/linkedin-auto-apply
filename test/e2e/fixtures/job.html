@@ -62,6 +62,18 @@
                 </select>
               </div>
               <div class="q">
+                <div class="h"><span class="t">What is your level of proficiency in Spanish?</span><span>*</span></div>
+                <div class="z"><div class="y"><div class="x">
+                  <select id="_r_2o_" class="dr0kb7 dr0kbt" required="">
+                    <option value="" class="dr0kb9" disabled="" selected>Selecionar opção</option>
+                    <option value="None" class="dr0kb9">None</option>
+                    <option value="Conversational" class="dr0kb9">Conversational</option>
+                    <option value="Professional" class="dr0kb9">Professional</option>
+                    <option value="Native or bilingual" class="dr0kb9">Native or bilingual</option>
+                  </select>
+                </div></div></div>
+              </div>
+              <div class="q">
                 <p class="t">Are you ready to receive your salary in USDT?*</p>
                 <div>
                   <div class="w"><div class="r"><div><input id="_r_31_" aria-label="Are you ready to receive your salary in USDT?" tabindex="0" type="radio" name="radio-group-_r_2u_"><label for="_r_31_"></label></div><div><p>Yes</p></div></div></div>
@@ -84,6 +96,11 @@
                 <div class="t">Portfolio link</div>
                 <input id="site" type="text">
               </div>`;
+
+        // Newer review step: the "Follow" box has a generated id and its text in a <p>.
+        const REACT_REVIEW = `
+              <p>Review your application before submitting.</p>
+              <div class="w"><div class="r"><div><input id="_r_f1_" type="checkbox" checked><label for="_r_f1_"></label></div><div><p>Seguir Estúdio Aurora para se manter atualizado com a página</p></div></div></div>`;
 
         const steps = [
           {
@@ -223,7 +240,7 @@
             <div class="c1">
               <div class="p1"><span>${s.progress}%</span></div>
               <h3>${s.title}</h3>
-              ${state.step === 2 ? REACT_QUESTIONS : s.html}
+              ${state.step === 2 ? REACT_QUESTIONS : state.step === steps.length - 1 ? REACT_REVIEW : s.html}
             </div>
             <div class="f1">${footer(state.step)}</div>`;
           } else {
@@ -273,7 +290,7 @@
           modal.querySelectorAll('.artdeco-inline-feedback--error, [data-err]').forEach((e) => e.remove());
           let ok = true;
           modal.querySelectorAll('input[type="text"][required], select[required]').forEach((el) => {
-            const empty = el.tagName === 'SELECT' ? el.value === 'Select an option' : !el.value.trim();
+            const empty = el.tagName === 'SELECT' ? el.value === 'Select an option' || el.value === '' : !el.value.trim();
             if (empty) { setError(el, 'Please enter a valid answer'); ok = false; return; }
             if (/numeric/.test(el.id) && !/^\d+$/.test(el.value.trim())) {
               setError(el, 'Enter a whole number between 0 and 99'); ok = false;

@@ -228,13 +228,19 @@
     await D.pause(400, 800);
   }
 
-  function setFollowCompany(modal, follow) {
-    const box = D.first(SEL.followCompany, modal, { visible: false });
-    if (box && box.checked !== follow) {
-      const label = box.id ? modal.querySelector(`label[for="${box.id}"]`) : null;
-      D.click(label || box);
-      if (box.checked !== follow) box.click();
-    }
+  /** Leaves the "Follow <company>" box as the user chose (off by default). */
+  async function setFollowCompany(modal, follow) {
+    const box = Fields.findFollowCompany(modal);
+    if (!box) return;
+    const checked = () => (box.tagName === 'INPUT' ? box.checked : box.getAttribute('aria-checked') === 'true');
+    if (checked() === follow) return;
+    const rootNode = box.getRootNode();
+    const label = box.id && rootNode.querySelector ? rootNode.querySelector(`label[for="${CSS.escape(box.id)}"]`) : null;
+    D.click(label || box);
+    await D.pause(150, 300);
+    if (checked() !== follow) box.click();
+    await D.pause(150, 300);
+    if (checked() !== follow) await Store.log('warn', M('followNotChanged'));
   }
 
   // ---------------- Answer resolution ----------------
@@ -388,6 +394,8 @@
       if (!reply || reply.action !== 'submit') throw new SkipJob(M('submitCancelled'));
     }
     await Control.checkpoint();
+    const modal = getModal();
+    if (modal) await setFollowCompany(modal, !!ctx.settings.followCompanies);
     D.click(action.button);
 
     let goneSince = 0;
@@ -437,7 +445,7 @@
       let action = primaryAction(modal);
       if (action && action.kind !== 'submit') await Resume.handle(modal, ctx);
       await fillStep(modal, ctx);
-      setFollowCompany(modal, !!ctx.settings.followCompanies);
+      await setFollowCompany(modal, !!ctx.settings.followCompanies);
 
       action = primaryAction(getModal() || modal);
       if (!action) throw new SkipJob(M('noNextButton'), STATUS.FAILED);
