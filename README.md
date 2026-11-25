@@ -84,11 +84,11 @@ You can **Pause**, **Resume** or **Stop** at any time and keep browsing in other
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Min. / max. pause | 15 s / 40 s | Random wait between submitted applications. |
+| Min. / max. pause | 8 s / 12 s | Random wait between submitted applications. |
 | Skip jobs containing these words | empty | Skips jobs whose title or company contains any word (e.g. `internship, senior`). |
 | Remote jobs only | off | Adds LinkedIn's remote filter to the search. |
 | Ask for confirmation before sending | off | Stops at the review step until you click **Send application**. Recommended for your first runs. |
-| Also ask about optional fields | off | By default only unknown required fields trigger a question. |
+| Also ask about optional fields | on | Unknown optional fields are asked too, so applications go out complete. Turn off to ask only required ones. |
 | Follow companies when applying | off | Keeps or unticks LinkedIn's "Follow company" box. |
 
 ### Answer bank
