@@ -92,7 +92,7 @@ Resolution order for a field:
 2. **Answer bank**: exact key match.
 3. **User**: asked in the panel, with the closest saved answer suggested (Jaccard similarity ≥ 0.6), never applied without confirmation.
 
-Fields LinkedIn already prefilled are kept. Unknown optional fields are skipped (configurable).
+Fields LinkedIn already prefilled are kept. Unknown optional fields are asked too by default (configurable).
 
 ## Maintaining selectors
 

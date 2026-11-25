@@ -26,10 +26,10 @@
       datePosted: 'any', // any | day | week | month
       remoteOnly: false,
       maxApplications: 25,
-      minDelaySec: 15,
-      maxDelaySec: 40,
+      minDelaySec: 8,
+      maxDelaySec: 12,
       confirmBeforeSubmit: false,
-      askOptionalFields: false,
+      askOptionalFields: true,
       followCompanies: false,
       excludeKeywords: '',
     },
