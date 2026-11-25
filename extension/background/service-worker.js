@@ -27,6 +27,12 @@ chrome.runtime.onInstalled.addListener(async () => {
   await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
   const control = await Store.get(K.CONTROL);
   if (control.state === S.RUNNING) await Store.patch(K.CONTROL, { state: S.IDLE });
+  // Atualização: aplica uma única vez os novos padrões (perguntar opcionais, intervalo ~10 s).
+  // Lê o valor bruto: Store.get misturaria os padrões novos e esconderia a versão antiga.
+  const raw = (await chrome.storage.local.get(K.SETTINGS))[K.SETTINGS];
+  if (raw && (raw.defaultsVersion || 1) < 2) {
+    await Store.patch(K.SETTINGS, { askOptionalFields: true, minDelaySec: 8, maxDelaySec: 12, defaultsVersion: 2 });
+  }
   await refreshBadge();
 });
 
